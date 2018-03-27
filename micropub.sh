@@ -27,6 +27,9 @@ case $EXT in
     mv "${SOURCEFILE}" "${DESTDIR}/content/";
     chmod 644 "${DESTDIR}/content/${FILENAME}"
     echo "Generating site ${WEBROOT}";
+    cd ${DESTDIR}/themes/;
+    /usr/bin/git pull;
+    cd ${DESTDIR};
     /usr/local/bin/hugo --quiet --config ${DESTDIR}/config.yaml -s ${DESTDIR} -d ${WEBROOT}
     ;;
   *)
