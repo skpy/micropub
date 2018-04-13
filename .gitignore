@@ -1,1 +1,4 @@
+composer.phar
+config.php
 secret.txt
+vendor/

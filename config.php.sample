@@ -1,0 +1,12 @@
+<?php
+
+$config = array(
+    'base_url' => 'https://' . $_SERVER['HTTP_HOST'],
+    'source_path' => '/srv/site/content',
+    'syndication' => array(
+        'twitter' => 'username',
+    ),
+);
+
+return $config;
+?>
