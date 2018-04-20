@@ -79,6 +79,8 @@ function normalize_properties($properties) {
             $props[$k] = $v;
         }
     }
+    # MF2 defines "name" instead of title, but Hugo wants "title"
+    $props['title'] = $props['name'];
     return $props;
 }
 
@@ -86,26 +88,6 @@ function normalize_properties($properties) {
 function build_post( $front_matter, $content) {
     ksort($front_matter);
     return "---\n" . Yaml::dump($front_matter) . "---\n" . $content . "\n"; 
-}
-
-# create front matter from MF2 array of arrays
-function create_front_matter($properties) {
-    $props = [];
-    foreach ($properties as $k => $v) {
-        if ($k == 'content') {
-            continue;
-        }
-        if (count($v) === 1) {
-            # we might have slugs and titles that look like dates,
-            # which Yaml::dump will try to helpfully convert.
-            # https://symfony.com/doc/current/components/yaml.html#date-handling
-            # So let's try to force them to strings.
-            $props[$k] = "$v";
-        } else {
-            $props[$k] = $v;
-        }
-    }
-    return Yaml::dump($props);
 }
 
 function write_file($file, $content, $overwrite = false) {
@@ -214,21 +196,22 @@ function create($request) {
     $properties['published'] = true;
 
     if ($type == 'entry') {
-        # entries require either a title, or a slug.
-        if (!isset($properties['title']) || !isset($properties['slug'])) {
+        # we need either a title, or a slug.
+        # NOTE: MF2 defines "name" as the title value.
+        if (!isset($properties['name']) || !isset($properties['slug'])) {
             # entries need a tile.
-            $properties['title'] = date('Y-m-d-His');
+            $properties['name'] = date('Y-m-d-His');
             #quit(400, 'insufficient_data', 'Entries require a title or a slug. Neither was provided');
         }
     }
     # if we have a title but not a slug, generate a slug
-    if (isset($properties['title']) && !isset($properties['slug'])) {
-        $properties['slug'] = slugify($properties['title']);
-        #$properties['slug'] = $properties['title'];
+    if (isset($properties['name']) && !isset($properties['slug'])) {
+        $properties['slug'] = slugify($properties['name']);
     }
     # if we have a slug but not a title, use slug as title
-    if (isset($properties['slug']) && !isset($properties['title'])) {
-        $properties['title'] = $properties['slug'];
+    if (isset($properties['slug']) && !isset($properties['name'])) {
+        # make sure the slugs are safe.
+        $properties['name'] = slugify($properties['slug']);
     }
 
     # build the entire source file, with front matter and content
