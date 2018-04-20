@@ -1,5 +1,6 @@
 {
   "require": {
-    "symfony/yaml": "4.0.*"
+    "symfony/yaml": "4.0.*",
+    "p3k/micropub": "*"
   }
 }
