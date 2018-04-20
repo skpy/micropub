@@ -1,93 +1,102 @@
 <?php
-require 'common.php';
 
-$target_dir = getcwd() . '/' . $_SERVER['HTTP_HOST'];
-check_target_dir($target_dir);
-
-// GET Requests:- config, syndicate to & source
-if (isset($_GET['q'])) {
-  what_can_i_do();
+# we can't do anything without a config file
+if ( ! file_exists('config.php') ) {
+    die;
 }
+$config = include_once './config.php';
+date_default_timezone_set($config['tz']);
+
+# invoke the composer autoloader for our dependencies
+require_once __DIR__.'/vendor/autoload.php';
+
+# load our common libraries
+include_once './inc/common.php';
+include_once './inc/content.php';
+include_once './inc/media.php';
 
 // Take headers and other incoming data
 $headers = getallheaders();
 if ($headers === false ) {
-  quit('invalid_headers', 'The request lacks valid headers', '400');
+    quit(400, 'invalid_headers', 'The request lacks valid headers');
 }
 $headers = array_change_key_case($headers, CASE_LOWER);
-$data = array();
 if (!empty($_POST['access_token'])) {
-  $token = "Bearer ".$_POST['access_token'];
-  $headers["authorization"] = $token;
+    $token = "Bearer ".$_POST['access_token'];
+    $headers["authorization"] = $token;
 }
-
 if (! isset($headers['authorization']) ) {
-  quit('no_auth', 'No authorization token supplied.', 400);
+    quit(401, 'no_auth', 'No authorization token supplied.');
 }
 // check the token for this connection.
-indieAuth($headers['authorization'], $_SERVER['HTTP_HOST']);
+indieAuth($headers['authorization'], $config['base_url']);
 
-// Are we getting a form-encoded submission?
-if (isset($_POST['h'])) {
-  $h = $_POST['h'];
-  unset($_POST['h']);
-  // create an object containing all the POST fields
-  $data = [
-    'type' => ['h-'.$h],
-    'properties' => array_map(
-      function ($a) {
-        return is_array($a) ? $a : [$a];
-      }, $_POST
-    )
-  ];
+# is this a GET request?
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    if (isset($_GET['q'])) {
+        switch ($_GET['q']):
+            case 'config':
+                show_config();
+                break;
+            case 'source':
+               show_content_source($_GET['url'], $_GET['properties']);
+                break;
+            case 'syndicate-to':
+                show_config('syndicate-to');
+                break;
+            default:
+                show_info();
+                break;
+        endswitch;
+    } else {
+        show_info();
+    }
+} elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (array_key_exists('file', $_FILES)) {
+        # this appears to be a file upload. Handle it.
+        #
+        # NOTE: micropub media uploads expect the file to be immediately
+        # available, so we upload to the site's directory, and optionally
+        # copy to the source directory for inclusion with later site builds.
+        # uploads will be stored at '/base/uploads/YYYY/mm/'
+        $subdir = date('Y/m/');
+        $upload_path = $config['base_path'] . $config['upload_path'] . $subdir;
+        $copy_path = $config['source_path'] . 'static/' . $config['upload_path'] . $subdir;
+        check_target_dir($upload_path);
+        $upload = media_upload($upload_path, $config['max_image_width']);
+        # do we need to copy this file to the source /static/ directory?
+        if ($config['copy_uploads_to_source'] === TRUE ) {
+            # we need to ensure '/source/static/uploads/YYYY/mm/' exists
+            check_target_dir($copy_path);
+            if ( copy ( $upload_path . $upload, $copy_path . $upload ) === FALSE ) {
+                quit(400, 'copy_error', 'Unable to copy upload to source directory');
+            }
+        }
+        $url = $config['base_url'] . $config['upload_path'] . $subdir . $upload;
+        header('HTTP/1.1 201 Created');
+        header('Location: ' . $url);
+        echo json_encode([ 'url' => $url ]); 
+        die();
+    } else {
+        # not a file upload. Parse the JSON or POST body into an object
+        $request = parse_request();
+        switch($request->action):
+            case 'delete':
+                delete($request);
+                break;
+            case 'undelete':
+                undelete($request);
+                break;
+            case 'update':
+                update($request);
+                break;
+            default:
+                create($request);
+                break;
+        endswitch;
+    }
 } else {
-  // nope, we're getting JSON, so decode it.
-  $data = json_decode(file_get_contents('php://input'), true);
+    # something other than GET or POST?  Unsupported.
+    quit(400, 'invalid_request', 'HTTP method unsupported');
 }
-
-if (empty($data)) {
-  quit('no_content', 'No content', '400');
-}
-
-if (empty($data['properties']['content']['0'])
-  && empty($data['properties']['photo']['0']) ) {
-  // If this is a POST and there's no content or photo, exit
-  if (empty($data['action'])) {
-    quit('missing_content', 'Missing content.', '400');
-  }
-}
-
-if ( empty($data['properties']['mp-slug'][0]) ) {
-  $title = date('YmdHi');
-} else {
-  $title = trim( $data['properties']['mp-slug'][0] );
-}
-$slug = strtolower( preg_replace("/[^-\w+]/", "", str_replace(' ', '-', $title) ) );
-$image_link = $data['properties']['photo']['0'];
-
-// Build up the post file
-$post = "---\n";
-$post .= "title: $title \n";
-$post .= 'date: ' . date('Y-m-d H:i:s') . "\n";
-$post .= "permalink: $slug\n";
-$post .= "twitterimage: $image_link\n";
-$post .= "---\n";
-$post .= $data['properties']['content']['0'] . "\n";
-
-$markdown = './' . $_SERVER['HTTP_HOST'] . '/' . $slug . '.md';
-$fh = fopen( $markdown, 'w' );
-if ( ! $fh = fopen( $markdown, 'w' ) ) {
-  quit('file_error', 'Unable to open Markdown file'. 400);
-}
-if ( fwrite($fh, $post ) === FALSE ) {
-  quit('write_error', 'Unable to write Markdown file', 400);
-}
-fwrite($fh, $post);
-fclose($fh);
-chmod($file, 0777);
-# sleep for 2 seconds, to allow incron to copy/move the file, and invoke Hugo
-sleep(2);
-
-header('HTTP/1.1 201 Created');
-header('Location: https://' . $_SERVER['HTTP_HOST'] . '/' . $slug . '/');
 ?>

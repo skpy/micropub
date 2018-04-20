@@ -1,0 +1,50 @@
+<?php
+
+/**
+this is the configuration file for my micropub implementation.  Rather than
+jump through a bunch of hoops trying to parse the host name, and figure out
+the current working directory, just capture those values as needed.
+**/
+$config = array(
+    # the URL of our site, with trailing slash.
+    'base_url' => 'https://' . $_SERVER['HTTP_HOST'] .'/',
+
+    # the base path of the site's docroot, with trailing slash
+    'base_path' => '/var/www/html/',
+
+    # the name of the sub-directory for images, with trailing slash.
+    # we'll create sub-directories of the form 'year/month/'.
+    'upload_path' => 'images/',
+
+    # the max pixel width of uploaded images.
+    'max_image_width' => 800,
+
+    # the path to the Hugo site.  DO NOT include "content/", we'll handle that.
+    # trailing slash required.
+    'source_path' => '/var/www/skippy/',
+
+    # different types of content may have different paths.
+    # by default, entries are in the root of the /content/ directory, so
+    # are not included here.  Notes are in the /note/ directory.
+    'content_paths' => array(
+        'note' => 'note/' . date('Y/m/d/'),
+    ),
+
+    # whether or not to copy uploaded files to the source /static/ directory.
+    'copy_uploads_to_source' => true,
+
+    # an array of syndication targets; each of which should contain the
+    # necessary credentials.
+    'syndication' => array(
+        'twitter' => 'smerrill',
+    ),
+
+    # the timezone to use for all times
+    'tz' => 'America/New_York',
+
+    # the command used to build the site
+    'command' => '/var/www/bin/hugo --quiet --config /var/www/skippy/config.yaml -s /var/www/skippy/ -d /var/www/html/',
+);
+
+return $config;
+?>
