@@ -4,9 +4,12 @@ use Symfony\Component\Yaml\Yaml;
 
 function get_source_from_url($url) {
     global $config;
-    $path = str_replace($config['base_url'], $config['source_path'], $url);
+
+    # our config has the Hugo root, so append "content/".
+    $source_path = $config['source_path'] . 'content/';
+    $path = str_replace($config['base_url'], $source_path, $url);
     if ('index.html' == substr($path, -10)) {
-        # if this is a full URL to "/index.html", replace that with ".md"
+        # if this was a full URL to "/index.html", replace that with ".md"
         $path = str_replace('/index.html', '.md', $path);
     } elseif ( '/' == substr($path, -1)) {
         # if this is a URL ending in just "/", replace that with ".md"
@@ -232,7 +235,7 @@ function create($request) {
     $file_contents = build_post($properties, $content);
 
     # produce a file name for this post.
-    $path = $config['source_path'];
+    $path = $config['source_path'] . 'content/';
     $url = $config['base_url'];
     # does this type of content require a specific path?
     if (array_key_exists($type, $config['content_paths'])) {

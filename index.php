@@ -66,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $upload = media_upload($upload_path, $config['max_image_width']);
         # do we need to copy this file to the source /static/ directory?
         if ($config['copy_uploads_to_source'] === TRUE ) {
-            # we need to ensure '/source/statuc/uploads/YYYY/mm/' exists
+            # we need to ensure '/source/static/uploads/YYYY/mm/' exists
             check_target_dir($copy_path);
             if ( copy ( $upload_path . $upload, $copy_path . $upload ) === FALSE ) {
                 quit(400, 'copy_error', 'Unable to copy upload to source directory');
