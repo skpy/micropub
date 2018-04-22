@@ -79,8 +79,11 @@ function normalize_properties($properties) {
             $props[$k] = $v;
         }
     }
-    # MF2 defines "name" instead of title, but Hugo wants "title"
-    $props['title'] = $props['name'];
+    # MF2 defines "name" instead of title, but Hugo wants "title".
+    # Only assign a title if the post has a name.
+    if (isset($props['name'])) {
+        $props['title'] = $props['name'];
+    }
     return $props;
 }
 
@@ -100,7 +103,7 @@ function write_file($file, $content, $overwrite = false) {
     }
     if (file_exists($file) && ($overwrite == false) ) {
         quit(400, 'file_conflict', 'The specified file exists');
-    } 
+    }
     if ( ! $fh = fopen( $file, 'w' ) ) {
         quit(400, 'file_error', 'Unable to open Markdown file');
     }
@@ -198,20 +201,21 @@ function create($request) {
     if ($type == 'entry') {
         # we need either a title, or a slug.
         # NOTE: MF2 defines "name" as the title value.
-        if (!isset($properties['name']) || !isset($properties['slug'])) {
-            # entries need a tile.
-            $properties['name'] = date('Y-m-d-His');
-            #quit(400, 'insufficient_data', 'Entries require a title or a slug. Neither was provided');
+        if (!isset($properties['name']) && !isset($properties['slug'])) {
+            # entries with neither a title nor a slug are "notes".
+            # We will assign this a slug.
+            $type = 'note';
+            $properties['layout'] = 'note';
+            $properties['slug'] = date('Hms');
         }
     }
     # if we have a title but not a slug, generate a slug
     if (isset($properties['name']) && !isset($properties['slug'])) {
         $properties['slug'] = slugify($properties['name']);
     }
-    # if we have a slug but not a title, use slug as title
-    if (isset($properties['slug']) && !isset($properties['name'])) {
-        # make sure the slugs are safe.
-        $properties['name'] = slugify($properties['slug']);
+    # make sure the slugs are safe.
+    if (isset($properties['slug'])) {
+        $properties['slug'] = slugify($properties['slug']);
     }
 
     # build the entire source file, with front matter and content
