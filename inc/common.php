@@ -131,4 +131,27 @@ function build_site() {
     global $config;
     exec( $config['command']);
 }
+
+# PHP handles arrays of file uploads differently from a single file upload.
+# So we need to normalize this into a common structure upon which we can act.
+function normalize_files_array($files) {
+    $result = [];
+    if (isset($files['tmp_name']) && is_array($files['tmp_name'])) {
+        # we have an array of one or more elements.
+        foreach (array_keys($files['tmp_name']) as $key) {
+            $result[] = [
+                'tmp_name' => $files['tmp_name'][$key],
+                'size' => $files['size'][$key],
+                'error' => $files['error'][$key],
+                'name' => $files['name'][$key],
+                'type' => $files['type'][$key],
+            ];
+        }
+    } else {
+        # make sure we return an array, so we can iterate over it
+        $result = [ $files ];
+    }
+    return $result;
+}
+
 ?>

@@ -73,7 +73,11 @@ function slugify($string) {
 function normalize_properties($properties) {
     $props = [];
     foreach ($properties as $k => $v) {
-        if (is_array($v) && count($v) === 1) {
+        # we want the "photo" property to be an array, even if it's a
+        # single element.  Our Hugo templates require this.
+        if ($k == 'photo') {
+            $props[$k] = $v;
+        } elseif (is_array($v) && count($v) === 1) {
             $props[$k] = $v[0];
         } else {
             $props[$k] = $v;
@@ -172,7 +176,7 @@ function update($request) {
     build_site();
 }
 
-function create($request) {
+function create($request, $photos = []) {
     global $config;
 
     $mf2 = $request->toMf2();
@@ -190,6 +194,15 @@ function create($request) {
     }
     # ensure that the properties array doesn't contain 'content'
     unset($properties['content']);
+
+    if (!empty($photos)) {
+        # add uploaded photos to the front matter.
+        if (!isset($properties['photo'])) {
+            $properties['photo'] = $photos;
+        } else {
+            array_merge($properties['photo'], $photos);
+        }
+    }
 
     # all items need a date
     if (!isset($properties['date'])) {

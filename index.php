@@ -15,6 +15,8 @@ include_once './inc/common.php';
 include_once './inc/content.php';
 include_once './inc/media.php';
 
+$photo_urls = array();
+
 // Take headers and other incoming data
 $headers = getallheaders();
 if ($headers === false ) {
@@ -52,18 +54,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         show_info();
     }
 } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    # set up some variables for use with media uploads.
+    $subdir = date('Y/m/');
+    $upload_path = $config['base_path'] . $config['upload_path'] . $subdir;
+    $copy_path = $config['source_path'] . 'static/' . $config['upload_path'] . $subdir;
     if (array_key_exists('file', $_FILES)) {
-        # this appears to be a file upload. Handle it.
-        #
-        # NOTE: micropub media uploads expect the file to be immediately
-        # available, so we upload to the site's directory, and optionally
-        # copy to the source directory for inclusion with later site builds.
-        # uploads will be stored at '/base/uploads/YYYY/mm/'
-        $subdir = date('Y/m/');
-        $upload_path = $config['base_path'] . $config['upload_path'] . $subdir;
-        $copy_path = $config['source_path'] . 'static/' . $config['upload_path'] . $subdir;
+        # this is a media endpoint file upload.  Process it and end.
         check_target_dir($upload_path);
-        $upload = media_upload($upload_path, $config['max_image_width']);
+        $upload = media_upload($_FILES['file'], $upload_path, $config['max_image_width']);
         # do we need to copy this file to the source /static/ directory?
         if ($config['copy_uploads_to_source'] === TRUE ) {
             # we need to ensure '/source/static/uploads/YYYY/mm/' exists
@@ -75,26 +73,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $url = $config['base_url'] . $config['upload_path'] . $subdir . $upload;
         header('HTTP/1.1 201 Created');
         header('Location: ' . $url);
-        echo json_encode([ 'url' => $url ]); 
+        echo json_encode([ 'url' => $url ]);
         die();
-    } else {
-        # not a file upload. Parse the JSON or POST body into an object
-        $request = parse_request();
-        switch($request->action):
-            case 'delete':
-                delete($request);
-                break;
-            case 'undelete':
-                undelete($request);
-                break;
-            case 'update':
-                update($request);
-                break;
-            default:
-                create($request);
-                break;
-        endswitch;
     }
+    # one or more photos may be uploaded along with the content.
+    if (!empty($_FILES['photo'])) {
+        check_target_dir($upload_path);
+        # ensure we have a normal array of files on which to iterate
+        $photos = normalize_files_array($_FILES['photo']);
+        foreach($photos as $photo) {
+            # we upload to $copy_path here, because Hugo will copy the contents
+            # of our static site into the rendered site for us.
+            $upload = media_upload($photo, $copy_path, $config['max_image_width']);
+            $photo_urls[] = $config['base_url'] . $config['upload_path'] . $subdir . $upload;
+        }
+    } 
+    # Parse the JSON or POST body into an object
+    $request = parse_request();
+    switch($request->action):
+        case 'delete':
+            delete($request);
+            break;
+        case 'undelete':
+            undelete($request);
+            break;
+        case 'update':
+            update($request, $photo_urls);
+            break;
+        default:
+            create($request, $photo_urls);
+            break;
+    endswitch;
 } else {
     # something other than GET or POST?  Unsupported.
     quit(400, 'invalid_request', 'HTTP method unsupported');

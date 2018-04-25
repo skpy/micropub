@@ -41,11 +41,7 @@ function resize_image($file, $width) {
     chmod($file, 0744);
 }
 
-function media_upload($target_dir, $max_width) {
-    $base_url = 'https://' . $_SERVER['HTTP_HOST'] . '/images/';
-
-    $file = $_FILES['file'];
-
+function media_upload($file, $target_dir, $max_width) {
     # first make sure the file isn't too large
     if ( $file['size'] > 6000000 )  {
         quit(413, 'too_large', 'The file is too large.');
@@ -68,7 +64,9 @@ function media_upload($target_dir, $max_width) {
         $ext = 'jpeg';
     }
     # define our own name for this file.
-    $filename = date('YmdHis') . ".$ext";
+    $orig = explode('.', $file['name'])[0];
+    $date = new DateTime();
+    $filename = $orig . '-' . $date->format('u') . ".$ext";
     # extra caution to ensure the file doesn't already exist
     if ( file_exists("$target_dir$filename")) {
         quit(409, 'file_exists', 'A filename conflict has occurred on the server.');
