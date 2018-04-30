@@ -36,7 +36,12 @@ $config = array(
     # an array of syndication targets; each of which should contain the
     # necessary credentials.
     'syndication' => array(
-        'twitter' => 'smerrill',
+        'twitter' => array( 'key'          => 'CONSUMER_KEY',
+                            'secret'       => 'CONSUMER_SECRET',
+                            'token'        => 'ACCESS_TOKEN',
+                            'token_secret' => 'ACCESS_TOKEN_SECRET',
+                            'prefix'       => 'I just posted ',
+                     ),
     ),
 
     # the timezone to use for all times

@@ -195,6 +195,31 @@ function create($request, $photos = []) {
     # ensure that the properties array doesn't contain 'content'
     unset($properties['content']);
 
+    # if this is a retweet, let's grab the original tweet so we can use
+    # its contents locally, as well as reference the tweeter's name.
+    if (isset($properties['repost-of']) 
+        && (FALSE !== strpos($properties['repost-of'], 'twitter.com/'))
+        && (isset($config['syndication']['twitter']))
+    ) {
+        $tweet = get_tweet($config['syndication']['twitter'], $properties['repost-of']);
+        if ( false !== $tweet ) {
+            $properties['repost-of-name'] = $tweet->user->name;
+            $content = $tweet->text;
+        }
+    }
+
+    # if this is a reply to a tweet, let's grab the original so we can use
+    # its contents locally, as well as reference the tweeter's name.
+    if (isset($properties['in-reply-to']) 
+        && (FALSE !== strpos($properties['in-reply-to'], 'twitter.com/'))
+        && (isset($config['syndication']['twitter']))
+    ) {
+        $tweet = get_tweet($config['syndication']['twitter'], $properties['in-reply-to']);
+        if ( false !== $tweet ) {
+            $properties['in-reply-to-name'] = $tweet->user->name;
+        }
+    }
+
     if (!empty($photos)) {
         # add uploaded photos to the front matter.
         if (!isset($properties['photo'])) {
@@ -208,8 +233,18 @@ function create($request, $photos = []) {
     if (!isset($properties['date'])) {
         $properties['date'] = date('Y-m-d H:m:s');
     }
-    # explicitly mark this item as published
-    $properties['published'] = true;
+
+    if (isset($properties['post-status'])) {
+        if ($properties['post-status'] == 'draft') {
+            $properties['published'] = false;
+        } else {
+            $properties['published'] = true;
+        }
+        unset($properties['post-status']);
+    } else {
+        # explicitly mark this item as published
+        $properties['published'] = true;
+    }
 
     if ($type == 'entry') {
         # we need either a title, or a slug.
@@ -252,7 +287,35 @@ function create($request, $photos = []) {
     # build the site.
     build_site();
 
-    # send a 201 response, so we have time to allow Hugo to generate the site
+    # allow the client to move on, while we syndicate this post
+    header('HTTP/1.1 201 Created');
+    header('Location: ' . $url);
+
+    # syndicate this post
+    if (isset($request->commands['mp-syndicate-to'])) {
+        foreach ($request->commands['mp-syndicate-to'] as $target) {
+            if (function_exists("syndicate_$target")) {
+                $syndicated_url = call_user_func("syndicate_$target", $config['syndication'][$target], $properties, $content, $url);
+                if (false !== $syndicated_url) {
+                    $syndicated_urls["$target-url"] = $syndicated_url;
+                }
+            }
+        }
+        if (!empty($syndicated_urls)) {
+            # convert the array of syndicated URLs into scalar key/value pairs
+            foreach ($syndicated_urls as $k => $v) {
+                $properties[$k] = $v;
+            }
+            # let's just re-write this post, with the new properties
+            # in the front matter.
+            # NOTE: we are NOT rebuilding the site at this time.
+            #       I am unsure whether I even want to display these
+            #       links.  But it's easy enough to collect them, for now.
+            $file_contents = build_post($properties, $content);
+            write_file($filename, $file_contents, true);
+        }
+    }
+    # send a 201 response, with the URL of this item.
     quit(201, null, null, $url);
 }
 
