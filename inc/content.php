@@ -197,26 +197,27 @@ function create($request, $photos = []) {
 
     # if this is a retweet, let's grab the original tweet so we can use
     # its contents locally, as well as reference the tweeter's name.
-    if (isset($properties['repost-of']) 
+    if (isset($properties['repost-of'])
         && (FALSE !== strpos($properties['repost-of'], 'twitter.com/'))
         && (isset($config['syndication']['twitter']))
     ) {
         $tweet = get_tweet($config['syndication']['twitter'], $properties['repost-of']);
         if ( false !== $tweet ) {
             $properties['repost-of-name'] = $tweet->user->name;
-            $content = $tweet->text;
+            $content = '<blockquote>' . $tweet->full_text . "</blockquote>\n";
         }
     }
 
     # if this is a reply to a tweet, let's grab the original so we can use
     # its contents locally, as well as reference the tweeter's name.
-    if (isset($properties['in-reply-to']) 
+    if (isset($properties['in-reply-to'])
         && (FALSE !== strpos($properties['in-reply-to'], 'twitter.com/'))
         && (isset($config['syndication']['twitter']))
     ) {
         $tweet = get_tweet($config['syndication']['twitter'], $properties['in-reply-to']);
         if ( false !== $tweet ) {
             $properties['in-reply-to-name'] = $tweet->user->name;
+            $content = '<blockquote>' . $tweet->text . "</blockquote>\n" . $content;
         }
     }
 

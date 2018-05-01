@@ -60,7 +60,7 @@ function syndicate_twitter($config, $properties, $content, $url) {
 function get_tweet($config, $url) {
     $t = twitter_init($config['key'], $config['secret'], $config['token'], $config['token_secret']);
     $id = get_tweet_id($url);
-    $tweet = $t->get("statuses/show", ['id' => $id]);
+    $tweet = $t->get("statuses/show", ['id' => $id, 'tweet_mode' => 'extended']);
     if (! $t->getLastHttpCode() == 200) {
         // error :(
         return false;
