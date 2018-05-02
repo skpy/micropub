@@ -224,7 +224,7 @@ function create($request, $photos = []) {
         if ( false !== $tweet ) {
             $properties['posttype'] = 'in-reply-to';
             $properties['in-reply-to-name'] = $tweet->user->name;
-            $content = '<blockquote>' . $tweet->text . "</blockquote>\n" . $content;
+            $content = '<blockquote>' . $tweet->full_text . "</blockquote>\n" . $content;
         }
     }
 
