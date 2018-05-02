@@ -32,7 +32,7 @@ function parse_file($original) {
     foreach (Yaml::parse($parts[1]) as $k => $v) {
         if(!is_array($v)) {
             $v = [$v];
-        } 
+        }
         $properties[$k] = $v;
     }
     $properties['content'] = [ trim($parts[2]) ];
@@ -168,7 +168,6 @@ function update($request) {
             $original[$key] = array_diff($original[$key], $value);
         }
     }
-    #print_r($original);
     $content = $original['content'][0];
     unset($original['content']);
     $original = normalize_properties($original);
@@ -259,10 +258,11 @@ function create($request, $photos = []) {
         # NOTE: MF2 defines "name" as the title value.
         if (!isset($properties['name']) && !isset($properties['slug'])) {
             # entries with neither a title nor a slug are "notes".
+            $type = 'note';
             # We will assign this a slug.
             $properties['slug'] = date('Hms');
             if ($properties['posttype'] == 'article' ) {
-                # this is not an article, a repost, or a reply.  It's a note.
+                # this is not a repost or a reply, so it must be a note.
                 $properties['posttype'] = 'note';
             }
         }
