@@ -195,6 +195,11 @@ function create($request, $photos = []) {
     # ensure that the properties array doesn't contain 'content'
     unset($properties['content']);
 
+    # https://indieweb.org/post-type-discovery describes how to discern
+    # what type of post this is.  We'll start with the assumption that
+    # everything is an article, and then revise as we discover otherwise.
+    $properties['posttype'] = 'article';
+
     # if this is a retweet, let's grab the original tweet so we can use
     # its contents locally, as well as reference the tweeter's name.
     if (isset($properties['repost-of'])
@@ -203,6 +208,7 @@ function create($request, $photos = []) {
     ) {
         $tweet = get_tweet($config['syndication']['twitter'], $properties['repost-of']);
         if ( false !== $tweet ) {
+            $properties['posttype'] = 'repost-of';
             $properties['repost-of-name'] = $tweet->user->name;
             $content = '<blockquote>' . $tweet->full_text . "</blockquote>\n";
         }
@@ -216,6 +222,7 @@ function create($request, $photos = []) {
     ) {
         $tweet = get_tweet($config['syndication']['twitter'], $properties['in-reply-to']);
         if ( false !== $tweet ) {
+            $properties['posttype'] = 'in-reply-to';
             $properties['in-reply-to-name'] = $tweet->user->name;
             $content = '<blockquote>' . $tweet->text . "</blockquote>\n" . $content;
         }
@@ -253,9 +260,11 @@ function create($request, $photos = []) {
         if (!isset($properties['name']) && !isset($properties['slug'])) {
             # entries with neither a title nor a slug are "notes".
             # We will assign this a slug.
-            $type = 'note';
-            $properties['layout'] = 'note';
             $properties['slug'] = date('Hms');
+            if ($properties['posttype'] == 'article' ) {
+                # this is not an article, a repost, or a reply.  It's a note.
+                $properties['posttype'] = 'note';
+            }
         }
     }
     # if we have a title but not a slug, generate a slug
