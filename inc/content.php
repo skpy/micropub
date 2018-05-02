@@ -104,6 +104,8 @@ function write_file($file, $content, $overwrite = false) {
         if ( FALSE === mkdir(dirname($file), 0777, true) ) {
             quit(400, 'cannot_mkdir', 'The content directory could not be created.');
         }
+        # create an _index.md file so that Hugo can make a browseable dir
+        touch(dirname($file) . '/_index.md');
     }
     if (file_exists($file) && ($overwrite == false) ) {
         quit(400, 'file_conflict', 'The specified file exists');
