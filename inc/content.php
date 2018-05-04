@@ -91,6 +91,29 @@ function normalize_properties($properties) {
     return $props;
 }
 
+function reply_or_repost($properties, $content) {
+    # a post is either a reply OR a repost OR neither; but never more than one.
+    # so we can safely loop through each of repost and reply and update
+    # the properties and content as needed.
+    foreach ( ['repost-of', 'in-reply-to'] as $type ) {
+        if (isset($properties[$type])) {
+            # replace all hyphens with underscores, for later use
+            $t = str_replace('-', '_', $type);
+            # get the domain of the site to which we are replying, and convert
+            # all dots to underscores.
+            $target = str_replace('.', '_', parse_url($properties[$type], PHP_URL_HOST));
+            # if a function exists for this type + target combo, call it
+            if function_exists("$target_$t") {
+                list($properties, $content) = call_user_func("$target_$t", $properties, $content);
+            } else {
+                # no silo specific function is registered for this one.
+                # do something generic.
+            }
+        }
+    }
+    return [$properties, $content];
+}
+
 # given an array of front matter and body content, return a full post
 function build_post( $front_matter, $content) {
     ksort($front_matter);
@@ -201,33 +224,10 @@ function create($request, $photos = []) {
     # everything is an article, and then revise as we discover otherwise.
     $properties['posttype'] = 'article';
 
-    # if this is a retweet, let's grab the original tweet so we can use
-    # its contents locally, as well as reference the tweeter's name.
-    if (isset($properties['repost-of'])
-        && (FALSE !== strpos($properties['repost-of'], 'twitter.com/'))
-        && (isset($config['syndication']['twitter']))
-    ) {
-        $tweet = get_tweet($config['syndication']['twitter'], $properties['repost-of']);
-        if ( false !== $tweet ) {
-            $properties['posttype'] = 'repost-of';
-            $properties['repost-of-name'] = $tweet->user->name;
-            $content = '<blockquote>' . $tweet->full_text . "</blockquote>\n";
-        }
-    }
-
-    # if this is a reply to a tweet, let's grab the original so we can use
-    # its contents locally, as well as reference the tweeter's name.
-    if (isset($properties['in-reply-to'])
-        && (FALSE !== strpos($properties['in-reply-to'], 'twitter.com/'))
-        && (isset($config['syndication']['twitter']))
-    ) {
-        $tweet = get_tweet($config['syndication']['twitter'], $properties['in-reply-to']);
-        if ( false !== $tweet ) {
-            $properties['posttype'] = 'in-reply-to';
-            $properties['in-reply-to-name'] = $tweet->user->name;
-            $content = '<blockquote>' . $tweet->full_text . "</blockquote>\n" . $content;
-        }
-    }
+    # figure out if this is a reply or a repost.  Invoke silo-specific
+    # methods to obtain source content, and alter this post's properties
+    # accordingly.
+    list($properties, $content) = reply_or_repost($properties, $content);
 
     if (!empty($photos)) {
         # add uploaded photos to the front matter.
