@@ -103,8 +103,8 @@ function reply_or_repost($properties, $content) {
             # all dots to underscores.
             $target = str_replace('.', '_', parse_url($properties[$type], PHP_URL_HOST));
             # if a function exists for this type + target combo, call it
-            if function_exists("$target_$t") {
-                list($properties, $content) = call_user_func("$target_$t", $properties, $content);
+            if function_exists("${target}_${t}") {
+                list($properties, $content) = call_user_func("${target}_${t}", $properties, $content);
             } else {
                 # no silo specific function is registered for this one.
                 # do something generic.
