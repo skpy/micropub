@@ -109,7 +109,7 @@ function reply_or_repost($properties, $content) {
                 # no silo specific function is registered for this one.
                 # do something generic.
                 if ($type == 'in-reply-to') {
-                    $prefix = '<div class="u-in-reply-to">Replying to ';
+                    $prefix = '<div class="u-in-reply-to">In reply to ';
                     $suffix = '<div class="e-content">' . $content . '</div>';
                 }
                 if ($type == 'repost-of') {

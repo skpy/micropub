@@ -39,24 +39,24 @@ function twitter_reply_or_repost( $type, $properties, $content) {
     if ( false !== $tweet ) {
         $properties["$type-name"] = $tweet->user->name;
         if ($type == 'in-reply-to') {
-            $prefix = '<div class="u-in-reply-to h-cite">Replying to ';
+            $prefix = '<div class="u-in-reply-to h-cite">In reply to ';
         }
         if ($type == 'repost-of') {
             $prefix = '<div class="u-repost-of h-cite">Repost of ';
             $suffix = '';
         }
-        $markup = '<a class="u-url p-author" href="' . $properties[$type] . '">' . $tweet->user->name . '</a><blockquote class="p-content">' . $tweet->full_text . '</blockquote></div>';
+        $markup = '<a class="u-url p-author" href="' . $properties[$type] . '">' . $tweet->user->name . '</a>: <blockquote class="p-content">' . $tweet->full_text . '</blockquote></div>';
     } else {
         # problem getting the tweet; so make a best effort to display something
         # useful.
         if ($type == 'in-reply-to') {
-            $prefix = '<div class="u-in-reply-to">Replying to ';
+            $prefix = '<div class="u-in-reply-to">In reply to ';
         }
         if ($type == 'repost-of') {
             $prefix = '<div class="u-repost-of">Repost of ';
             $suffix = '';
         }
-        $markup = '<a class="u-url" href="' . $properties[$type] . '">' . $properties[$type] . '</a></div>';
+        $markup = '<a class="u-url" href="' . $properties[$type] . '">' . $properties[$type] . '</a>: </div>';
     }
     $content = $prefix . $markup . $suffix;
     return [$properties, $content];
