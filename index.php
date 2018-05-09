@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     # set up some variables for use with media uploads.
     $subdir = date('Y/m/');
     $upload_path = $config['base_path'] . $config['upload_path'] . $subdir;
-    $copy_path = $config['source_path'] . 'static/' . $config['upload_path'] . $subdir;
+    $copy_path = $config['source_path'] . 'content/static/' . $config['upload_path'] . $subdir;
     if (array_key_exists('file', $_FILES)) {
         # this is a media endpoint file upload.  Process it and end.
         check_target_dir($upload_path);
