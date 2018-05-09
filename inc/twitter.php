@@ -89,9 +89,14 @@ function syndicate_twitter($config, $properties, $content, $url) {
         # the relevant media ID, for inclusion with the tweet.
         $photos = [];
         foreach($properties['photo'] as $p) {
-            $photos[] = $t->upload('media/upload', ['media' => $p]);
-        } 
-        $params['media_ids'] = implode(',', $photos);
+            $upload = $t->upload('media/upload', ['media' => $p]);
+            if ($t->getLastHttpCode() == 200) {
+                $photos[] = $upload->media_id_string;
+            }
+        }
+        if (!empty($photos)) {
+            $params['media_ids'] = implode(',', $photos);
+        }
     }
 
     if (isset($properties['title'])) {

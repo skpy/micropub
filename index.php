@@ -79,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     }
     # one or more photos may be uploaded along with the content.
     if (!empty($_FILES['photo'])) {
-        check_target_dir($upload_path);
+        check_target_dir($copy_path);
         # ensure we have a normal array of files on which to iterate
         $photos = normalize_files_array($_FILES['photo']);
         foreach($photos as $photo) {
