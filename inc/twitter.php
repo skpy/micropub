@@ -5,8 +5,14 @@ function twitter_init($ck, $cs, $at, $atk) {
     return new TwitterOAuth($ck, $cs, $at, $atk);
 }
 
+# get a tweet ID from a tweet URL
 function get_tweet_id($url = '') {
     return trim(substr($url, strrpos($url, '/')), '/');
+}
+
+# given a JSON tweet object, this will build the URL to that tweet
+function build_tweet_url($tweet) {
+  return 'https://twitter.com/' . $tweet->user->screen_name . '/status/' . $tweet->id_str;
 }
 
 # Tweets are fully quotable in reply or repost context, so these are
@@ -66,13 +72,15 @@ function syndicate_twitter($config, $properties, $content, $url) {
     # build our Twitter object
     $t = twitter_init($config['key'], $config['secret'], $config['token'], $config['token_secret']);
 
+    # if this is a repost, we just perform the retweet and collect the
+    # URL of our instance of it.
     if (isset($properties['repost-of'])) {
         $id = get_tweet_id($properties['repost-of']);
-        $t->post('statuses/retweet/', ['id' => $id]);
-        # perform the retweet and return; no need to do more.
-        # NOTE: we don't check the return code here because this is the
-        # of processing.  I don't feel like retrying a retweet.
-        return;
+        $tweet = $t->post('statuses/retweet/', ['id' => $id]);
+        if (! $t->getLastHttpCode() == 200) {
+            return false;
+        }
+        return build_tweet_url($tweet);
     }
 
     # not a retweet.  May be a reply.  May have media.  Build up what's needed.
@@ -112,7 +120,7 @@ function syndicate_twitter($config, $properties, $content, $url) {
     if (! $t->getLastHttpCode() == 200) {
         return false;
     }
-    return $tweet; // in case we want to do something with this.
+    return build_tweet_url($tweet); // in case we want to do something with this.
 }
 
 function get_tweet($config, $url) {
