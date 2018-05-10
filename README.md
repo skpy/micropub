@@ -44,3 +44,8 @@ Additional silos can be added, much like syndication.  To define a new silo, cre
 The Twitter silo also defines `m_twitter_com_in_reply_to` and `m_twitter_repost_of`, which are simple wrappers to ensure that this functionality works when using mobile-friendly URLs.
 
 See `inc/twitter.php` for the implementation details.
+
+## How I use this
+I have my Hugo site in `/var/www/skippy.net`.  I have my [web server](https://caddyserver.com/) configured to use `/var/www/skippy.net/public` as the document root of my site.  All of `/var/www/skippy.net/content` and `/var/www/skippy.net/static` are owned by the `www-data` user, to ensure that content can be created, edited, and deleted through Micropub without permission problems.
+
+When I create a new post, Micropub will generate the file in `/var/www/skippy.net/content/`, and then invoke Hugo, which will recreate all the content in `/var/www/skippy.net/public`.  No extra steps are required, and the new content is available.
