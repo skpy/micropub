@@ -32,7 +32,7 @@ if (! isset($headers['authorization']) ) {
     quit(401, 'no_auth', 'No authorization token supplied.');
 }
 // check the token for this connection.
-indieAuth($headers['authorization'], $config['base_url']);
+indieAuth($config['token_endpoint'], $headers['authorization'], $config['base_url']);
 
 # is this a GET request?
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
