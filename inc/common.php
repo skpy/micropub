@@ -75,22 +75,26 @@ if (!function_exists('getallheaders')) {
  *
  * @return boolean true if authorised
  */
-function indieAuth($token, $me = '') {
+function indieAuth($endpoint, $token, $me = '') {
     /**
      * Check token is valid
      */
     if ( $me == '' ) { $me = $_SERVER['HTTP_HOST']; }
-    $ch = curl_init("https://tokens.indieauth.com/token");
+    $ch = curl_init($endpoint);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, Array("Authorization: $token"));
-    $response = Array();
-    $curl_response = curl_exec($ch);
-    if (false === $curl_response) {
-        quit(502, 'connection_problem', 'Unable to connect to indieauth service');
-    }
-    parse_str($curl_response, $response);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, 
+        Array("Accept: application/json","Authorization: $token"));
+    $token_response = strval(curl_exec($ch));
     curl_close($ch);
-    if (empty($response) || ! isset($response['me']) || ! isset($response['scope']) ) {
+    if (empty($token_response)) {
+        # strval(FALSE) is an empty string
+        quit(502, 'connection_problem', 'Unable to connect to token service');
+    }
+    $response = json_decode($token_response, true, 2);
+    if (!is_array($response) || json_last_error() !== \JSON_ERROR_NONE) {
+        parse_str($token_response, $response);
+    }
+    if (empty($response) || isset($response['error']) || ! isset($response['me']) || ! isset($response['scope']) ) {
         quit(401, 'insufficient_scope', 'The request lacks authentication credentials');
     } elseif ($response['me'] != $me) {
         quit(401, 'insufficient_scope', 'The request lacks valid authentication credentials');
