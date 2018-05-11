@@ -37,6 +37,7 @@ function twitter_reply_or_repost( $type, $properties, $content) {
         return [$properties, $content];
     }
 
+    $properties['posttype'] = $type;
     $tweet = get_tweet($config['syndication']['twitter'], $properties[$type]);
     if ( false !== $tweet ) {
         $properties["$type-name"] = $tweet->user->name;
