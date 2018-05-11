@@ -105,19 +105,6 @@ function reply_or_repost($properties, $content) {
             # if a function exists for this type + target combo, call it
             if (function_exists("${target}_${t}")) {
                 list($properties, $content) = call_user_func("${target}_${t}", $properties, $content);
-            } else {
-                # no silo specific function is registered for this one.
-                # do something generic.
-                if ($type == 'in-reply-to') {
-                    $prefix = '<div class="u-in-reply-to">In reply to ';
-                    $suffix = '<div class="e-content">' . $content . '</div>';
-                }
-                if ($type == 'repost-of') {
-                    $prefix = '<div class="u-repost-of">Repost of ';
-                    $suffix = '';
-                }
-                $markup = '<a class="u-url" href="' . $properties[$type] . '">' . $properties[$type] . '</a></div>';
-                $content = $prefix . $markup . $suffix;
             }
         }
     }
