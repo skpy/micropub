@@ -114,7 +114,7 @@ function reply_or_repost($properties, $content) {
 # given an array of front matter and body content, return a full post
 function build_post( $front_matter, $content) {
     ksort($front_matter);
-    return "---\n" . Yaml::dump($front_matter) . "---\n" . $content . "\n"; 
+    return "---\n" . Yaml::dump($front_matter) . "---\n" . $content . "\n";
 }
 
 function write_file($file, $content, $overwrite = false) {
@@ -130,13 +130,9 @@ function write_file($file, $content, $overwrite = false) {
     if (file_exists($file) && ($overwrite == false) ) {
         quit(400, 'file_conflict', 'The specified file exists');
     }
-    if ( ! $fh = fopen( $file, 'w' ) ) {
+    if ( FALSE === file_put_contents( $file, $content ) ) {
         quit(400, 'file_error', 'Unable to open Markdown file');
     }
-    if ( fwrite($fh, $content ) === FALSE ) {
-        quit(400, 'write_error', 'Unable to write to Markdown file');
-    }
-    fclose($fh);
 }
 
 function delete($request) {

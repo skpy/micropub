@@ -1,10 +1,9 @@
 <?php
 
-/**
-this is the configuration file for my micropub implementation.  Rather than
-jump through a bunch of hoops trying to parse the host name, and figure out
-the current working directory, just capture those values as needed.
-**/
+# We set the default timezone here so that you can safely use the PHP
+# date() function inside the config elements below, should you desire.
+date_default_timezone_set('America/New_York');
+
 $config = array(
     # the URL of our site, with trailing slash.
     'base_url' => 'https://' . $_SERVER['HTTP_HOST'] .'/',
@@ -46,9 +45,6 @@ $config = array(
 
     # the IndieAuth token endpoint to use
     'token_endpoint' => 'https://tokens.indieauth.com/token',
-
-    # the timezone to use for all times
-    'tz' => 'America/New_York',
 
     # the command used to build the site
     'command' => '/var/www/bin/hugo --quiet --config /var/www/skippy/config.yaml -s /var/www/skippy/ -d /var/www/html/',

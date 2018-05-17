@@ -5,7 +5,6 @@ if ( ! file_exists('config.php') ) {
     die;
 }
 $config = include_once './config.php';
-date_default_timezone_set($config['tz']);
 
 # invoke the composer autoloader for our dependencies
 require_once __DIR__.'/vendor/autoload.php';
