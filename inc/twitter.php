@@ -56,8 +56,8 @@ function syndicate_twitter($config, $properties, $content, $url) {
     # URL of our instance of it.
     if (isset($properties['repost-of'])) {
         $id = get_tweet_id($properties['repost-of']);
-        $tweet = $t->post('statuses/retweet/', ['id' => $id]);
-        if (! $t->getLastHttpCode() == 200) {
+        $tweet = $t->post("statuses/retweet/$id");
+        if ($t->getLastHttpCode() != 200) {
             return false;
         }
         return build_tweet_url($tweet);

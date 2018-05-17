@@ -208,10 +208,15 @@ function create($request, $photos = []) {
 
     # pull out just the content, so that $properties can be front matter
     # NOTE: content may be in ['content'] or ['content']['html'].
-    if (is_array($properties['content']) && isset($properties['content']['html'])) {
-        $content = $properties['content']['html'];
+    # NOTE 2: there may be NO content!
+    if (isset($properties['content'])) {
+        if (is_array($properties['content']) && isset($properties['content']['html'])) {
+            $content = $properties['content']['html'];
+        } else {
+            $content = $properties['content'];
+        }
     } else {
-        $content = $properties['content'];
+        $content = '';
     }
     # ensure that the properties array doesn't contain 'content'
     unset($properties['content']);

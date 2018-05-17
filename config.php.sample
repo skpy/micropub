@@ -44,6 +44,9 @@ $config = array(
                      ),
     ),
 
+    # the IndieAuth token endpoint to use
+    'token_endpoint' => 'https://tokens.indieauth.com/token',
+
     # the timezone to use for all times
     'tz' => 'America/New_York',
 
