@@ -91,22 +91,21 @@ function normalize_properties($properties) {
     return $props;
 }
 
-function reply_or_repost($properties, $content) {
-    # a post is either a reply OR a repost OR neither; but never more than one.
-    # so we can safely loop through each of repost and reply and update
-    # the properties and content as needed.
-    foreach ( ['repost-of', 'in-reply-to'] as $type ) {
-        if (isset($properties[$type])) {
-            # replace all hyphens with underscores, for later use
-            $t = str_replace('-', '_', $type);
-            # get the domain of the site to which we are replying, and convert
-            # all dots to underscores.
-            $target = str_replace('.', '_', parse_url($properties[$type], PHP_URL_HOST));
-            # if a function exists for this type + target combo, call it
-            if (function_exists("${target}_${t}")) {
-                list($properties, $content) = call_user_func("${target}_${t}", $properties, $content);
-            }
-        }
+# this function is a router to other functions that can operate on the source
+# URLs of reposts, replies, bookmarks, etc.
+# $type = the indieweb type (https://indieweb.org/post-type-discovery)
+# $properties = array of front-matter properties for this post
+# $content = the content of this post (which may be an empty string)
+#
+function silo_post_type_function($type, $properties, $content) {
+    # replace all hyphens with underscores, for later use
+    $t = str_replace('-', '_', $type);
+    # get the domain of the site to which we are replying, and convert
+    # all dots to underscores.
+    $target = str_replace('.', '_', parse_url($properties[$type], PHP_URL_HOST));
+    # if a function exists for this type + target combo, call it
+    if (function_exists("${target}_${t}")) {
+        list($properties, $content) = call_user_func("${target}_${t}", $properties, $content);
     }
     return [$properties, $content];
 }
@@ -221,11 +220,26 @@ function create($request, $photos = []) {
     # what type of post this is.  We'll start with the assumption that
     # everything is an article, and then revise as we discover otherwise.
     $properties['posttype'] = 'article';
-
-    # figure out if this is a reply or a repost.  Invoke silo-specific
-    # methods to obtain source content, and alter this post's properties
-    # accordingly.
-    list($properties, $content) = reply_or_repost($properties, $content);
+    if (isset($properties['rsvp'])) {
+        $properties['posttype'] = 'rsvp';
+        list($properties, $content) = silo_post_type_function('rsvp', $properties, $content);
+    }
+    if (isset($properties['in-reply-to'])) {
+        $properties['posttype'] = 'reply';
+        list($properties, $content) = silo_post_type_function('in-reply-to', $properties, $content);
+    }
+    if (isset($properties['repost-of'])) {
+        $properties['posttype'] = 'repost';
+        list($properties, $content) = silo_post_type_function('repost-of', $properties, $content);
+    }
+    if (isset($properties['like-of'])) {
+        $properties['posttype'] = 'like';
+        list($properties, $content) = silo_post_type_function('like-of', $properties, $content);
+    }
+    if (isset($properties['bookmark-of'])) {
+        $properties['posttype'] = 'bookmark';
+        list($properties, $content) = silo_post_type_function('bookmark-of', $properties, $content);
+    }
 
     if (!empty($photos)) {
         # add uploaded photos to the front matter.
@@ -233,6 +247,11 @@ function create($request, $photos = []) {
             $properties['photo'] = $photos;
         } else {
             array_merge($properties['photo'], $photos);
+        }
+        if (strlen($content) < 50) {
+            # we have one or more photos and less than 50 characters worth
+            # of content.  Let's call this a photo post.
+            $properties['posttype'] = 'photo';
         }
     }
 
@@ -253,23 +272,16 @@ function create($request, $photos = []) {
         $properties['published'] = true;
     }
 
-    if ($type == 'entry') {
-        # we need either a title, or a slug.
-        # NOTE: MF2 defines "name" as the title value.
-        if (!isset($properties['name']) && !isset($properties['slug'])) {
-            # entries with neither a title nor a slug are "notes".
-            $type = 'note';
-            # We will assign this a slug.
-            $properties['slug'] = date('Hms');
-            if ($properties['posttype'] == 'article' ) {
-                # this is not a repost or a reply, so it must be a note.
-                $properties['posttype'] = 'note';
-            }
-        }
+    # we need either a title, or a slug.
+    # NOTE: MF2 defines "name" as the title value.
+    if (!isset($properties['name']) && !isset($properties['slug'])) {
+        # We will assign this a slug.
+        $properties['slug'] = date('Hms');
     }
+
     # if we have a title but not a slug, generate a slug
     if (isset($properties['name']) && !isset($properties['slug'])) {
-        $properties['slug'] = slugify($properties['name']);
+        $properties['slug'] = $properties['name'];
     }
     # make sure the slugs are safe.
     if (isset($properties['slug'])) {
