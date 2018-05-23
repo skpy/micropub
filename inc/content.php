@@ -260,7 +260,11 @@ function create($request, $photos = []) {
     $properties['posttype'] = post_type_discovery($properties);
 
     # invoke any silo-specific functions for this post type.
-    list($properties, $content) = silo_post_type_function($properties['posttype'], $properties, $content);
+    # articles, notes, and photos interact with silos through syndication only.
+    # replies, reposts, likes, bookmarks, etc, may interact with silos here.
+    if (! in_array($type, ['article', 'note', 'photo'])) {
+        list($properties, $content) = silo_post_type_function($properties['posttype'], $properties, $content);
+    }
 
     # all items need a date
     if (!isset($properties['date'])) {
