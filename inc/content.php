@@ -110,6 +110,37 @@ function silo_post_type_function($type, $properties, $content) {
     return [$properties, $content];
 }
 
+# this function accepts the properties of a post and
+# tries to perform post type discovery according to
+# https://indieweb.org/post-type-discovery
+# returns the MF2 post type
+function post_type_discovery($properties) {
+    if (isset($properties['rsvp'])) {
+        return 'rsvp';
+    }
+    if (isset($properties['in-reply-to'])) {
+        return 'in-reply-to';
+    }
+    if (isset($properties['repost-of'])) {
+        return 'repost-of';
+    }
+    if (isset($properties['like-of'])) {
+        return 'like-of';
+    }
+    if (isset($properties['bookmark-of'])) {
+        return 'bookmark-of';
+    }
+    if (isset($properties['photo'])) {
+        return 'photo';
+    }
+    # articles have titles, which Micropub defines as "name"
+    if (isset($properties['name'])) {
+        return 'article';
+    }
+    # no other match?  Must be a note.
+    return 'note';
+}
+
 # given an array of front matter and body content, return a full post
 function build_post( $front_matter, $content) {
     ksort($front_matter);
@@ -216,44 +247,20 @@ function create($request, $photos = []) {
     # ensure that the properties array doesn't contain 'content'
     unset($properties['content']);
 
-    # https://indieweb.org/post-type-discovery describes how to discern
-    # what type of post this is.  We'll start with the assumption that
-    # everything is an article, and then revise as we discover otherwise.
-    $properties['posttype'] = 'article';
-    if (isset($properties['rsvp'])) {
-        $properties['posttype'] = 'rsvp';
-        list($properties, $content) = silo_post_type_function('rsvp', $properties, $content);
-    }
-    if (isset($properties['in-reply-to'])) {
-        $properties['posttype'] = 'reply';
-        list($properties, $content) = silo_post_type_function('in-reply-to', $properties, $content);
-    }
-    if (isset($properties['repost-of'])) {
-        $properties['posttype'] = 'repost';
-        list($properties, $content) = silo_post_type_function('repost-of', $properties, $content);
-    }
-    if (isset($properties['like-of'])) {
-        $properties['posttype'] = 'like';
-        list($properties, $content) = silo_post_type_function('like-of', $properties, $content);
-    }
-    if (isset($properties['bookmark-of'])) {
-        $properties['posttype'] = 'bookmark';
-        list($properties, $content) = silo_post_type_function('bookmark-of', $properties, $content);
-    }
-
     if (!empty($photos)) {
         # add uploaded photos to the front matter.
         if (!isset($properties['photo'])) {
             $properties['photo'] = $photos;
         } else {
-            array_merge($properties['photo'], $photos);
-        }
-        if (strlen($content) < 50) {
-            # we have one or more photos and less than 50 characters worth
-            # of content.  Let's call this a photo post.
-            $properties['posttype'] = 'photo';
+            $properties['photo'] = array_merge($properties['photo'], $photos);
         }
     }
+
+    # figure out what kind of post this is.
+    $properties['posttype'] = post_type_discovery($properties);
+
+    # invoke any silo-specific functions for this post type.
+    list($properties, $content) = silo_post_type_function($properties['posttype'], $properties, $content);
 
     # all items need a date
     if (!isset($properties['date'])) {
