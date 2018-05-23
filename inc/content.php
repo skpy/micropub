@@ -227,8 +227,6 @@ function create($request, $photos = []) {
     global $config;
 
     $mf2 = $request->toMf2();
-    # grab the type of this content, less the "h-" prefix
-    $type = substr($mf2['type'][0], 2);
     # make a more normal PHP array from the MF2 JSON array
     $properties = normalize_properties($mf2['properties']);
 
@@ -262,7 +260,7 @@ function create($request, $photos = []) {
     # invoke any silo-specific functions for this post type.
     # articles, notes, and photos interact with silos through syndication only.
     # replies, reposts, likes, bookmarks, etc, may interact with silos here.
-    if (! in_array($type, ['article', 'note', 'photo'])) {
+    if (! in_array($properties['posttype'], ['article', 'note', 'photo'])) {
         list($properties, $content) = silo_post_type_function($properties['posttype'], $properties, $content);
     }
 
@@ -306,9 +304,9 @@ function create($request, $photos = []) {
     $path = $config['source_path'] . 'content/';
     $url = $config['base_url'];
     # does this type of content require a specific path?
-    if (array_key_exists($type, $config['content_paths'])) {
-        $path .= $config['content_paths'][$type];
-        $url .= $config['content_paths'][$type];
+    if (array_key_exists($properties['posttype'], $config['content_paths'])) {
+        $path .= $config['content_paths'][$properties['posttype']];
+        $url .= $config['content_paths'][$properties['posttype']];
     }
     $filename = $path . $properties['slug'] . '.md';
     $url .= $properties['slug'] . '/index.html';
