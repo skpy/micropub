@@ -25,8 +25,12 @@ $config = array(
     # different types of content may have different paths.
     # by default, entries are in the root of the /content/ directory, so
     # are not included here.  Notes are in the /note/ directory.
+    # Reposts and replies are **usually** notes, so stick them in /note/, too.
     'content_paths' => array(
-        'note' => 'note/' . date('Y/m/d/'),
+        'note'        => 'note/' . date('Y/m/d/'),
+        'in-reply-to' => 'note/' . date('Y/m/d/'),
+        'repost-of'   => 'note/' . date('Y/m/d/'),
+        'bookmark-of' => 'link/',
     ),
 
     # whether or not to copy uploaded files to the source /static/ directory.
