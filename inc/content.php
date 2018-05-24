@@ -115,7 +115,7 @@ function posttype_source_function($posttype, $properties, $content) {
 # https://indieweb.org/post-type-discovery
 # returns the MF2 post type
 function post_type_discovery($properties) {
-  $vocab = array('rsvp',
+    $vocab = array('rsvp',
                  'in-reply-to',
                  'repost-of',
                  'like-of',
