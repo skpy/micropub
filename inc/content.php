@@ -91,24 +91,47 @@ function normalize_properties($properties) {
     return $props;
 }
 
-function reply_or_repost($properties, $content) {
-    # a post is either a reply OR a repost OR neither; but never more than one.
-    # so we can safely loop through each of repost and reply and update
-    # the properties and content as needed.
-    foreach ( ['repost-of', 'in-reply-to'] as $type ) {
-        if (isset($properties[$type])) {
-            # replace all hyphens with underscores, for later use
-            $t = str_replace('-', '_', $type);
-            # get the domain of the site to which we are replying, and convert
-            # all dots to underscores.
-            $target = str_replace('.', '_', parse_url($properties[$type], PHP_URL_HOST));
-            # if a function exists for this type + target combo, call it
-            if (function_exists("${target}_${t}")) {
-                list($properties, $content) = call_user_func("${target}_${t}", $properties, $content);
-            }
-        }
+# this function is a router to other functions that can operate on the source
+# URLs of reposts, replies, bookmarks, etc.
+# $type = the indieweb type (https://indieweb.org/post-type-discovery)
+# $properties = array of front-matter properties for this post
+# $content = the content of this post (which may be an empty string)
+#
+function posttype_source_function($posttype, $properties, $content) {
+    # replace all hyphens with underscores, for later use
+    $type = str_replace('-', '_', $posttype);
+    # get the domain of the site to which we are replying, and convert
+    # all dots to underscores.
+    $target = str_replace('.', '_', parse_url($properties[$posttype], PHP_URL_HOST));
+    # if a function exists for this type + target combo, call it
+    if (function_exists("${type}_${target}")) {
+        list($properties, $content) = call_user_func("${type}_${target}", $properties, $content);
     }
     return [$properties, $content];
+}
+
+# this function accepts the properties of a post and
+# tries to perform post type discovery according to
+# https://indieweb.org/post-type-discovery
+# returns the MF2 post type
+function post_type_discovery($properties) {
+    $vocab = array('rsvp',
+                 'in-reply-to',
+                 'repost-of',
+                 'like-of',
+                 'bookmark-of',
+                 'photo');
+    foreach ($vocab as $type) {
+        if (isset($properties[$type])) {
+            return $type;
+        }
+    }
+    # articles have titles, which Micropub defines as "name"
+    if (isset($properties['name'])) {
+        return 'article';
+    }
+    # no other match?  Must be a note.
+    return 'note';
 }
 
 # given an array of front matter and body content, return a full post
@@ -197,8 +220,6 @@ function create($request, $photos = []) {
     global $config;
 
     $mf2 = $request->toMf2();
-    # grab the type of this content, less the "h-" prefix
-    $type = substr($mf2['type'][0], 2);
     # make a more normal PHP array from the MF2 JSON array
     $properties = normalize_properties($mf2['properties']);
 
@@ -217,23 +238,25 @@ function create($request, $photos = []) {
     # ensure that the properties array doesn't contain 'content'
     unset($properties['content']);
 
-    # https://indieweb.org/post-type-discovery describes how to discern
-    # what type of post this is.  We'll start with the assumption that
-    # everything is an article, and then revise as we discover otherwise.
-    $properties['posttype'] = 'article';
-
-    # figure out if this is a reply or a repost.  Invoke silo-specific
-    # methods to obtain source content, and alter this post's properties
-    # accordingly.
-    list($properties, $content) = reply_or_repost($properties, $content);
-
     if (!empty($photos)) {
         # add uploaded photos to the front matter.
         if (!isset($properties['photo'])) {
             $properties['photo'] = $photos;
         } else {
-            array_merge($properties['photo'], $photos);
+            $properties['photo'] = array_merge($properties['photo'], $photos);
         }
+    }
+
+    # figure out what kind of post this is.
+    $properties['posttype'] = post_type_discovery($properties);
+
+    # invoke any source-specific functions for this post type.
+    # articles, notes, and photos don't really have "sources", other than
+    # their own content.
+    # replies, reposts, likes, bookmarks, etc, should reference source URLs
+    # and may interact with those sources here.
+    if (! in_array($properties['posttype'], ['article', 'note', 'photo'])) {
+        list($properties, $content) = posttype_source_function($properties['posttype'], $properties, $content);
     }
 
     # all items need a date
@@ -253,23 +276,16 @@ function create($request, $photos = []) {
         $properties['published'] = true;
     }
 
-    if ($type == 'entry') {
-        # we need either a title, or a slug.
-        # NOTE: MF2 defines "name" as the title value.
-        if (!isset($properties['name']) && !isset($properties['slug'])) {
-            # entries with neither a title nor a slug are "notes".
-            $type = 'note';
-            # We will assign this a slug.
-            $properties['slug'] = date('Hms');
-            if ($properties['posttype'] == 'article' ) {
-                # this is not a repost or a reply, so it must be a note.
-                $properties['posttype'] = 'note';
-            }
-        }
+    # we need either a title, or a slug.
+    # NOTE: MF2 defines "name" as the title value.
+    if (!isset($properties['name']) && !isset($properties['slug'])) {
+        # We will assign this a slug.
+        $properties['slug'] = date('Hms');
     }
+
     # if we have a title but not a slug, generate a slug
     if (isset($properties['name']) && !isset($properties['slug'])) {
-        $properties['slug'] = slugify($properties['name']);
+        $properties['slug'] = $properties['name'];
     }
     # make sure the slugs are safe.
     if (isset($properties['slug'])) {
@@ -283,9 +299,9 @@ function create($request, $photos = []) {
     $path = $config['source_path'] . 'content/';
     $url = $config['base_url'];
     # does this type of content require a specific path?
-    if (array_key_exists($type, $config['content_paths'])) {
-        $path .= $config['content_paths'][$type];
-        $url .= $config['content_paths'][$type];
+    if (array_key_exists($properties['posttype'], $config['content_paths'])) {
+        $path .= $config['content_paths'][$properties['posttype']];
+        $url .= $config['content_paths'][$properties['posttype']];
     }
     $filename = $path . $properties['slug'] . '.md';
     $url .= $properties['slug'] . '/index.html';

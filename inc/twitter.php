@@ -15,29 +15,34 @@ function build_tweet_url($tweet) {
   return 'https://twitter.com/' . $tweet->user->screen_name . '/status/' . $tweet->id_str;
 }
 
-# Tweets are fully quotable in reply or repost context, so these are
-# all just wrappers around a single function that handles both cases.
-function twitter_com_in_reply_to($properties, $content) {
-    return twitter_reply_or_repost('in-reply-to', $properties, $content);
+# Tweets are fully quotable in most contexts, so these are
+# all just wrappers around a single function that handles these cases.
+function in_reply_to_twitter_com($properties, $content) {
+    return twitter_source('in-reply-to', $properties, $content);
 }
-function twitter_com_repost_of($properties, $content) {
-    return twitter_reply_or_repost('repost-of', $properties, $content);
+function repost_of_twitter_com($properties, $content) {
+    return twitter_source('repost-of', $properties, $content);
 }
-function m_twitter_com_in_reply_to($properties, $content) {
-    return twitter_reply_or_repost('in-reply-to', $properties, $content);
+function bookmark_of_twitter_com($properties, $content) {
+    return twitter_source('bookmark-of', $properties, $content);
 }
-function m_twitter_com_repost_of($properties, $content) {
-    return twitter_reply_or_repost('repost-of', $properties, $content);
+function in_reply_to_m_twitter_com($properties, $content) {
+    return twitter_source('in-reply-to', $properties, $content);
+}
+function repost_of_m_twitter_com($properties, $content) {
+    return twitter_source('repost-of', $properties, $content);
+}
+function bookmark_of_m_twitter_com($properties, $content) {
+    return twitter_source('bookmark-of', $properties, $content);
 }
 
 # replies and reposts have very similar markup, so this builds it.
-function twitter_reply_or_repost( $type, $properties, $content) {
+function twitter_source( $type, $properties, $content) {
     global $config;
     if (!isset($config['syndication']['twitter'])) {
         return [$properties, $content];
     }
 
-    $properties['posttype'] = $type;
     $tweet = get_tweet($config['syndication']['twitter'], $properties[$type]);
     if ( false !== $tweet ) {
         $properties["$type-name"] = $tweet->user->name;
