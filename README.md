@@ -36,12 +36,12 @@ Content you create can be syndicated to external services. Right now, only Twitt
 
 Each syndication target is required to have configuration declared in the `syndication` array in `config.php`.  Then, each syndication target should have a function `syndication_<target>`, where <target> matches the name of the array key in `config.php`.  Each such function is expected to return the URL of the syndicated copy of this post, which will be added to the front matter of the post.
 
-### Replies and Reposts
-Replies and reposts are [silo](https://indieweb.org/silo)-aware.  Right now, the only supported silo is Twitter.  If the source of a reply or repost is a Tweet, the original tweet will be retreived, and stored in the front matter of the post.  Your theme may then elect to use this as needed.  In this way, we can preserve historical context of your activities, and allow you to display referenced data as you need.
+### Source URLs
+Replies, reposts, bookmarks, etc all define a source URL. This server can interact with those sources on a per-target basis.  Right now, the only supported source is Twitter.  If the source of a reply, repost, or bookmark is a Tweet, the original tweet will be retreived, and stored in the front matter of the post.  Your theme may then elect to use this as needed.  In this way, we can preserve historical context of your activities, and allow you to display referenced data as you need.
 
-Additional silos can be added, much like syndication.  To define a new silo, create two new functions that match the format `<silo_domain_name>_in_reply_to` or `<silo_domain_name>_repost_of`.  Convert all dots in the domain name to underscores.  For example, the Twitter silo uses `twitter_com_in_reply_to` and `twitter_com_repost_of`.
+Additional sources can be added, much like syndication.  To define a new source, create a new function that matches the format `<post_type>_<source_domain_name>`.  Convert all dots in the domain name to underscores.  For example, the Twitter source functions use `in_reply_to_twitter_com` and `repost_of_twitter_com` and `bookmark_of_twitter_com`.
 
-The Twitter silo also defines `m_twitter_com_in_reply_to` and `m_twitter_repost_of`, which are simple wrappers to ensure that this functionality works when using mobile-friendly URLs.
+The Twitter source also defines `<post_type>_m_twitter_com`, which are simple wrappers to ensure that this functionality works when using mobile-friendly URLs.
 
 See `inc/twitter.php` for the implementation details.
 
