@@ -97,15 +97,15 @@ function normalize_properties($properties) {
 # $properties = array of front-matter properties for this post
 # $content = the content of this post (which may be an empty string)
 #
-function silo_post_type_function($type, $properties, $content) {
+function posttype_source_function($posttype, $properties, $content) {
     # replace all hyphens with underscores, for later use
-    $t = str_replace('-', '_', $type);
+    $type = str_replace('-', '_', $posttype);
     # get the domain of the site to which we are replying, and convert
     # all dots to underscores.
-    $target = str_replace('.', '_', parse_url($properties[$type], PHP_URL_HOST));
+    $target = str_replace('.', '_', parse_url($properties[$posttype], PHP_URL_HOST));
     # if a function exists for this type + target combo, call it
-    if (function_exists("${target}_${t}")) {
-        list($properties, $content) = call_user_func("${target}_${t}", $properties, $content);
+    if (function_exists("${type}_${target}")) {
+        list($properties, $content) = call_user_func("${type}_${target}", $properties, $content);
     }
     return [$properties, $content];
 }
@@ -115,23 +115,16 @@ function silo_post_type_function($type, $properties, $content) {
 # https://indieweb.org/post-type-discovery
 # returns the MF2 post type
 function post_type_discovery($properties) {
-    if (isset($properties['rsvp'])) {
-        return 'rsvp';
-    }
-    if (isset($properties['in-reply-to'])) {
-        return 'in-reply-to';
-    }
-    if (isset($properties['repost-of'])) {
-        return 'repost-of';
-    }
-    if (isset($properties['like-of'])) {
-        return 'like-of';
-    }
-    if (isset($properties['bookmark-of'])) {
-        return 'bookmark-of';
-    }
-    if (isset($properties['photo'])) {
-        return 'photo';
+  $vocab = array('rsvp',
+                 'in-reply-to',
+                 'repost-of',
+                 'like-of',
+                 'bookmark-of',
+                 'photo');
+    foreach ($vocab as $type) {
+        if (isset($properties[$type])) {
+            return $type;
+        }
     }
     # articles have titles, which Micropub defines as "name"
     if (isset($properties['name'])) {
@@ -257,11 +250,13 @@ function create($request, $photos = []) {
     # figure out what kind of post this is.
     $properties['posttype'] = post_type_discovery($properties);
 
-    # invoke any silo-specific functions for this post type.
-    # articles, notes, and photos interact with silos through syndication only.
-    # replies, reposts, likes, bookmarks, etc, may interact with silos here.
+    # invoke any source-specific functions for this post type.
+    # articles, notes, and photos don't really have "sources", other than
+    # their own content.
+    # replies, reposts, likes, bookmarks, etc, should reference source URLs
+    # and may interact with those sources here.
     if (! in_array($properties['posttype'], ['article', 'note', 'photo'])) {
-        list($properties, $content) = silo_post_type_function($properties['posttype'], $properties, $content);
+        list($properties, $content) = posttype_source_function($properties['posttype'], $properties, $content);
     }
 
     # all items need a date
