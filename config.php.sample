@@ -36,6 +36,9 @@ $config = array(
     # whether or not to copy uploaded files to the source /static/ directory.
     'copy_uploads_to_source' => true,
 
+    # an external micropub media endpoint to use.
+    # 'media_endpoint' => 'https://example.com/my-media-endpoint/',
+
     # an array of syndication targets; each of which should contain the
     # necessary credentials.
     'syndication' => array(

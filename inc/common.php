@@ -117,7 +117,10 @@ function show_config($show = 'all') {
         }
     }
 
-    $conf = array("media-endpoint" => $config['base_url'] . 'micropub/index.php');
+    $media_endpoint = isset($config['media_endpoint']) ?
+	$config['media_endpoint'] :
+	($config['base_url'] . 'micropub/index.php');
+    $conf = array("media-endpoint" => $media_endpoint);
     if ( ! empty($syndicate_to) ) {
         $conf['syndicate-to'] = $syndicate_to;
     }
