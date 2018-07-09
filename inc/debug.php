@@ -6,13 +6,12 @@
 
 function syndicate_debug($config, $properties, $content, $url) {
 
-    $debug_path = $config['base_path'] . 'public/' . $config['syndication']['debug']['path'];
-    if ( ! file_exists($debug_path)) {
-        if ( FALSE === mkdir($debug_path, 0777, true) ) {
-            quit(400, 'cannot_mkdir', 'The content directory could not be created.');
+    if ( ! file_exists($config['path'])) {
+        if ( FALSE === mkdir($config['path'], 0777, true) ) {
+            quit(400, 'cannot_mkdir', 'The debug directory could not be created.');
         }
     }
-    $fileanme = date('YmdHi') . '.txt';
+    $filename = date('YmdHi') . '.txt';
 
     $data = "-----DEBUG OUTPUT-----\n";
     $data .= var_export($properties, true);
@@ -21,8 +20,8 @@ function syndicate_debug($config, $properties, $content, $url) {
     $data .= "\n----------\n";
     $data .= $url;
 
-    if ( FALSE === file_put_contents( $debug_path . $filename, $data ) ) {
+    if ( FALSE === file_put_contents( $config['path'] . $filename, $data ) ) {
         quit(400, 'file_error', 'Unable to open debug file');
     }
-    return $config['base_url'] . $config['syndication']['debug']['path'] . $filename;
+    return $config['url'] . $filename;
 }

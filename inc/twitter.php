@@ -60,6 +60,12 @@ function syndicate_twitter($config, $properties, $content, $url) {
     # if this is a repost, we just perform the retweet and collect the
     # URL of our instance of it.
     if (isset($properties['repost-of'])) {
+        # we can only retweet things that originated at Twitter, so
+        # confirm that the URL we're reposting is a Twitter URL.
+        $host = parse_url($properties['repost-of'], PHP_URL_HOST);
+        if (! in_array($host, ['mobile.twitter.com','twitter.com','www.twitter.com','twtr.io'])) {
+            return false;
+        }
         $id = get_tweet_id($properties['repost-of']);
         $tweet = $t->post("statuses/retweet/$id");
         if ($t->getLastHttpCode() != 200) {
@@ -72,6 +78,11 @@ function syndicate_twitter($config, $properties, $content, $url) {
     $params = [] ;
 
     if (isset($properties['in-reply-to'])) {
+        $host = parse_url($properties['in-reply-to'], PHP_URL_HOST);
+        if (! in_array($host, ['mobile.twitter.com','twitter.com','www.twitter.com','twtr.io'])) {
+            # we can't currently syndicate replies to non-Twitter sources.
+            return false;
+        }
         # replies need an ID to which they are replying.
         $params['in_reply_to_status_id'] = get_tweet_id($properties['in-reply-to']);
         $params['auto_populate_reply_metadata'] = true;
