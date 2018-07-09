@@ -14,6 +14,7 @@ include_once './inc/common.php';
 include_once './inc/content.php';
 include_once './inc/media.php';
 include_once './inc/twitter.php';
+include_once './inc/debug.php';
 
 $photo_urls = array();
 
