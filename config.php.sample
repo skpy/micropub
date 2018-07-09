@@ -47,6 +47,14 @@ $config = array(
                      ),
     ),
 
+    # some Micropub clients don't set syndication targets for some actions,
+    # but we may want to syndicate some stuff all the time.  For each post
+    # kind, define an array of mandatory syndication targets.
+    'always_syndicate' => array(
+        'repost-of'   => array( 'twitter' ),
+        'in-reply-to' => array( 'twitter' ),
+    ),
+
     # the IndieAuth token endpoint to use
     'token_endpoint' => 'https://tokens.indieauth.com/token',
 

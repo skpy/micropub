@@ -318,7 +318,19 @@ function create($request, $photos = []) {
     header('Location: ' . $url);
 
     # syndicate this post
+    # some post kinds may enforce syndication, even if the Micropub client
+    # did not send an mp-syndicate-to parameter. This code finds those post
+    # kinds and sets the mp-syndicate-to.
+    if (isset($config['always_syndicate'])) {
+        if (array_key_exists($properties['posttype'], $config['always_syndicate'])) {
+            foreach ($config['always_syndicate'][$properties['posttype']] as $target) {
+                $request->commands['mp-syndicate-to'][] = $target;
+            }
+        }
+    }
     if (isset($request->commands['mp-syndicate-to'])) {
+        # ensure we don't have duplicate syndication targets
+        $request->commands['mp-syndicate-to'] = array_unique($request->commands['mp-syndicate-to']);
         foreach ($request->commands['mp-syndicate-to'] as $target) {
             if (function_exists("syndicate_$target")) {
                 $syndicated_url = call_user_func("syndicate_$target", $config['syndication'][$target], $properties, $content, $url);
