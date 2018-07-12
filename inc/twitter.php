@@ -57,9 +57,8 @@ function syndicate_twitter($config, $properties, $content, $url) {
     # build our Twitter object
     $t = twitter_init($config['key'], $config['secret'], $config['token'], $config['token_secret']);
 
-    # if this is a repost, we just perform the retweet and collect the
-    # URL of our instance of it.
-    if (isset($properties['repost-of'])) {
+    # a pure retweet has no original content; just the source tweet.
+    if (isset($properties['repost-of']) && empty($content)) {
         # we can only retweet things that originated at Twitter, so
         # confirm that the URL we're reposting is a Twitter URL.
         $host = parse_url($properties['repost-of'], PHP_URL_HOST);
@@ -74,7 +73,8 @@ function syndicate_twitter($config, $properties, $content, $url) {
         return build_tweet_url($tweet);
     }
 
-    # not a retweet.  May be a reply.  May have media.  Build up what's needed.
+    # Not a pure retweet.  May be a retweet with comment. May be a reply.
+    # May have media.  Build up what's needed.
     $params = [] ;
 
     if (isset($properties['in-reply-to'])) {
@@ -111,6 +111,11 @@ function syndicate_twitter($config, $properties, $content, $url) {
     } else {
         # no title means this is a "note".  So just post the content directly.
         $params['status'] = $content;
+        # if this is a retweet with comment, append the URL of the tweet
+        # https://twittercommunity.com/t/method-to-retweet-with-comment/35330/21
+        if (isset($properties['repost-of'])) {
+            $params['status'] .= ' ' . $properties['repost-of'];
+        }
     }
     $tweet = $t->post('statuses/update', $params);
     if (! $t->getLastHttpCode() == 200) {
