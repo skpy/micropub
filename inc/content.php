@@ -261,7 +261,7 @@ function create($request, $photos = []) {
 
     # all items need a date
     if (!isset($properties['date'])) {
-        $properties['date'] = date('Y-m-d H:m:s');
+        $properties['date'] = date('Y-m-d H:i:s');
     }
 
     if (isset($properties['post-status'])) {
@@ -280,7 +280,7 @@ function create($request, $photos = []) {
     # NOTE: MF2 defines "name" as the title value.
     if (!isset($properties['name']) && !isset($properties['slug'])) {
         # We will assign this a slug.
-        $properties['slug'] = date('Hms');
+        $properties['slug'] = date('His');
     }
 
     # if we have a title but not a slug, generate a slug
