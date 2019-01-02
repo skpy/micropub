@@ -328,6 +328,15 @@ function create($request, $photos = []) {
         file_put_contents($path, "---\nnotes:\n");
       }
       file_put_contents($path, $file_contents, FILE_APPEND);
+      # now we need to touch an empty Markdown file, so that Hugo will
+      # build this note file.
+      $path = $config['source_path'] . 'content/' . $content_path;
+      if (! file_exists($path)) {
+        if ( FALSE === mkdir($path, 0777, true) ) {
+            quit(400, 'cannot_mkdir', 'The content directory could not be created.');
+        }
+      }
+      touch($path . date('m') . '.md');
     }
 
     # build the site.
