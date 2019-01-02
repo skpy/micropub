@@ -327,7 +327,7 @@ function create($request, $photos = []) {
         # prep the YAML for our note which will follow
         file_put_contents($path, "---\nnotes:\n");
       }
-      file_puts_contents($path, $file_contents, FILE_APPEND);
+      file_put_contents($path, $file_contents, FILE_APPEND);
     }
 
     # build the site.
