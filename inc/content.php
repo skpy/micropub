@@ -143,7 +143,7 @@ function build_post( $front_matter, $content) {
       return "---\n" . Yaml::dump($front_matter) . "---\n" . $content . "\n";
     } else {
       $front_matter['content'] = $content;
-      return Yaml::dump(array($front_matter));
+      return Yaml::dump(array($front_matter), 2, 2);
     }
 }
 
@@ -322,7 +322,7 @@ function create($request, $photos = []) {
         }
       }
       $url = $config['base_url'] . $content_path . date('m') . '/#' . $properties['slug'];
-      $path .= date('m') . '.md';
+      $path .= date('m') . '.yaml';
       if (! file_exists($path)) {
         # prep the YAML for our note which will follow
         file_put_contents($path, "---\nnotes:\n");
