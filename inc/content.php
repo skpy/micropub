@@ -135,9 +135,16 @@ function post_type_discovery($properties) {
 }
 
 # given an array of front matter and body content, return a full post
+# Articles are full Markdown files; everything else is just YAML blobs
+# to be appended to a data file.
 function build_post( $front_matter, $content) {
     ksort($front_matter);
-    return "---\n" . Yaml::dump($front_matter) . "---\n" . $content . "\n";
+    if ($front_matter['posttype'] == 'article') {
+      return "---\n" . Yaml::dump($front_matter) . "---\n" . $content . "\n";
+    } else {
+      $front_matter['content'] = $content;
+      return Yaml::dump(array($front_matter));
+    }
 }
 
 function write_file($file, $content, $overwrite = false) {
@@ -280,7 +287,7 @@ function create($request, $photos = []) {
     # NOTE: MF2 defines "name" as the title value.
     if (!isset($properties['name']) && !isset($properties['slug'])) {
         # We will assign this a slug.
-        $properties['slug'] = date('His');
+        $properties['slug'] = date('YmdHis');
     }
 
     # if we have a title but not a slug, generate a slug
@@ -292,23 +299,36 @@ function create($request, $photos = []) {
         $properties['slug'] = slugify($properties['slug']);
     }
 
-    # build the entire source file, with front matter and content
+    # build the entire source file, with front matter and content for articles
+    # or YAML blobs for notes, etc
     $file_contents = build_post($properties, $content);
 
-    # produce a file name for this post.
-    $path = $config['source_path'] . 'content/';
-    $url = $config['base_url'];
-    # does this type of content require a specific path?
-    if (array_key_exists($properties['posttype'], $config['content_paths'])) {
-        $path .= $config['content_paths'][$properties['posttype']];
-        $url .= $config['content_paths'][$properties['posttype']];
+    if ($properties['posttype'] == 'article') {
+      # produce a file name for this post.
+      $path = $config['source_path'] . 'content/';
+      $url = $config['base_url'] . $properties['slug'] . '/index.html';
+      $filename = $path . $properties['slug'] . '.md';
+      # write_file will default to NOT overwriting existing files,
+      # so we don't need to check that here.
+      write_file($filename, $file_contents);
+    } else {
+      # this content will be appended to a data file.
+      $content_path = $config['content_paths'][$properties['posttype']];
+      $path = $config['source_path'] . 'data/' . $content_path;
+      if (! file_exists($path)) {
+        # fail if we can't create the directory
+        if ( FALSE === mkdir($path, 0777, true) ) {
+            quit(400, 'cannot_mkdir', 'The data directory could not be created.');
+        }
+      }
+      $url = $config['base_url'] . $content_path . date('m') . '/#' . $properties['slug'];
+      $path .= date('m') . '.md';
+      if (! file_exists($path)) {
+        # prep the YAML for our note which will follow
+        file_put_contents($path, "---\nnotes:\n");
+      }
+      file_puts_contents($path, $file_contents, FILE_APPEND);
     }
-    $filename = $path . $properties['slug'] . '.md';
-    $url .= $properties['slug'] . '/index.html';
-
-    # write_file will default to NOT overwriting existing files,
-    # so we don't need to check that here.
-    write_file($filename, $file_contents);
 
     # build the site.
     build_site();
