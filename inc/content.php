@@ -283,7 +283,8 @@ function create($request, $photos = []) {
     # NOTE: MF2 defines "name" as the title value.
     if (!isset($properties['name']) && !isset($properties['slug'])) {
         # We will assign this a slug.
-        $properties['slug'] = date('YmdHis');
+        # Hex value of seconds since UNIX epoch
+        $properties['slug'] = dechex(date('U'));
     }
 
     # if we have a title but not a slug, generate a slug
@@ -300,32 +301,32 @@ function create($request, $photos = []) {
     $file_contents = build_post($properties, $content);
 
     if ($properties['posttype'] == 'article') {
-      # produce a file name for this post.
-      $path = $config['source_path'] . 'content/';
-      $url = $config['base_url'] . $properties['slug'] . '/index.html';
-      $filename = $path . $properties['slug'] . '.md';
-      # write_file will default to NOT overwriting existing files,
-      # so we don't need to check that here.
-      write_file($filename, $file_contents);
+        # produce a file name for this post.
+        $path = $config['source_path'] . 'content/';
+        $url = $config['base_url'] . $properties['slug'] . '/index.html';
+        $filename = $path . $properties['slug'] . '.md';
+        # write_file will default to NOT overwriting existing files,
+        # so we don't need to check that here.
+        write_file($filename, $file_contents);
     } else {
-      # this content will be appended to a data file.
-      # our config file defines the content_path of the desired file.
-      $content_path = $config['content_paths'][$properties['posttype']];
-      $yaml_path = $config['source_path'] . 'data/' . $content_path . '.yaml';
-      $md_path = $config['source_path'] . 'content/' . $content_path . '.md';
-      $url = $config['base_url'] . $content_path . '/#' . $properties['slug'];
-      check_target_dir(dirname($yaml_path));
-      check_target_dir(dirname($md_path));
-      if (! file_exists($yaml_path)) {
-        # prep the YAML for our note which will follow
-        file_put_contents($yaml_path, "---\nentries:\n");
-      }
-      file_put_contents($yaml_path, $file_contents, FILE_APPEND);
-      # now we need to create a Markdown file, so that Hugo will
-      # build the file for public consumption.
-      if (! file_exists($md_path)) {
-        file_put_contents($md_path, "---\ntype: " . $properties['posttype'] . "\n---");
-      }
+        # this content will be appended to a data file.
+        # our config file defines the content_path of the desired file.
+        $content_path = $config['content_paths'][$properties['posttype']];
+        $yaml_path = $config['source_path'] . 'data/' . $content_path . '.yaml';
+        $md_path = $config['source_path'] . 'content/' . $content_path . '.md';
+        $url = $config['base_url'] . $content_path . '/#' . $properties['slug'];
+        check_target_dir(dirname($yaml_path));
+        check_target_dir(dirname($md_path));
+        if (! file_exists($yaml_path)) {
+            # prep the YAML for our note which will follow
+            file_put_contents($yaml_path, "---\nentries:\n");
+        }
+        file_put_contents($yaml_path, $file_contents, FILE_APPEND);
+        # now we need to create a Markdown file, so that Hugo will
+        # build the file for public consumption.
+        if (! file_exists($md_path)) {
+            file_put_contents($md_path, "---\ntype: " . $properties['posttype'] . "\n---\n");
+        }
     }
 
     # build the site.
