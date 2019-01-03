@@ -151,11 +151,7 @@ function write_file($file, $content, $overwrite = false) {
     # make sure the directory exists, in the event that the filename includes
     # a new sub-directory
     if ( ! file_exists(dirname($file))) {
-        if ( FALSE === mkdir(dirname($file), 0777, true) ) {
-            quit(400, 'cannot_mkdir', 'The content directory could not be created.');
-        }
-        # create an _index.md file so that Hugo can make a browseable dir
-        touch(dirname($file) . '/_index.md');
+        check_target_dir(dirname($file));
     }
     if (file_exists($file) && ($overwrite == false) ) {
         quit(400, 'file_conflict', 'The specified file exists');
@@ -313,30 +309,23 @@ function create($request, $photos = []) {
       write_file($filename, $file_contents);
     } else {
       # this content will be appended to a data file.
+      # our config file defines the content_path of the desired file.
       $content_path = $config['content_paths'][$properties['posttype']];
-      $path = $config['source_path'] . 'data/' . $content_path;
-      if (! file_exists($path)) {
-        # fail if we can't create the directory
-        if ( FALSE === mkdir($path, 0777, true) ) {
-            quit(400, 'cannot_mkdir', 'The data directory could not be created.');
-        }
-      }
-      $url = $config['base_url'] . $content_path . date('m') . '/#' . $properties['slug'];
-      $path .= date('m') . '.yaml';
-      if (! file_exists($path)) {
+      $yaml_path = $config['source_path'] . 'data/' . $content_path . '.yaml';
+      $md_path = $config['source_path'] . 'content/' . $content_path . '.md';
+      $url = $config['base_url'] . $content_path . '/#' . $properties['slug'];
+      check_target_dir(dirname($yaml_path));
+      check_target_dir(dirname($md_path));
+      if (! file_exists($yaml_path)) {
         # prep the YAML for our note which will follow
-        file_put_contents($path, "---\nnotes:\n");
+        file_put_contents($yaml_path, "---\nentries:\n");
       }
-      file_put_contents($path, $file_contents, FILE_APPEND);
-      # now we need to touch an empty Markdown file, so that Hugo will
-      # build this note file.
-      $path = $config['source_path'] . 'content/' . $content_path;
-      if (! file_exists($path)) {
-        if ( FALSE === mkdir($path, 0777, true) ) {
-            quit(400, 'cannot_mkdir', 'The content directory could not be created.');
-        }
+      file_put_contents($yaml_path, $file_contents, FILE_APPEND);
+      # now we need to create a Markdown file, so that Hugo will
+      # build the file for public consumption.
+      if (! file_exists($md_path)) {
+        file_put_contents($md_path, "---\ntype: " . $properties['posttype'] . "\n---");
       }
-      touch($path . date('m') . '.md');
     }
 
     # build the site.

@@ -161,4 +161,16 @@ function normalize_files_array($files) {
     return $result;
 }
 
+function check_target_dir($target_dir) {
+    if ( empty($target_dir)) {
+        quit(400, 'unknown_dir', 'Unspecified directory');
+    }
+    # make sure our upload directory exists
+    if ( ! file_exists($target_dir) ) {
+        # fail if we can't create the directory
+        if ( FALSE === mkdir($target_dir, 0755, true) ) {
+            quit(400, 'cannot_mkdir', 'The directory could not be created.');
+        }
+    }
+}
 ?>

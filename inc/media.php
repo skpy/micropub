@@ -1,18 +1,5 @@
 <?php
 
-function check_target_dir($target_dir) {
-    if ( empty($target_dir)) {
-        quit(400, 'unknown_dir', 'Unspecified directory');
-    }
-    # make sure our upload directory exists
-    if ( ! file_exists($target_dir) ) {
-        # fail if we can't create the directory
-        if ( FALSE === mkdir($target_dir, 0777, true) ) {
-            quit(400, 'cannot_mkdir', 'The upload directory could not be created.');
-        }
-    }
-}
-
 function resize_image($file, $width) {
     # https://stackoverflow.com/a/25181208/3297734
     $ext = pathinfo(basename($file), PATHINFO_EXTENSION);
