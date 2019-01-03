@@ -327,6 +327,14 @@ function create($request, $photos = []) {
         if (! file_exists($md_path)) {
             file_put_contents($md_path, "---\ntype: " . $properties['posttype'] . "\n---\n");
         }
+        # we may need to create a _index.md file so that a section template
+        # can be generated. If the content_path has any slashes in it, that
+        # means that sub-directories are defined, and thus a section index
+        # is required.
+        if (FALSE !== strpos($content_path, '/')) {
+            $section_path = dirname($config['source_path'] . 'content/' . $content_path) . '/_index.md';
+            file_put_contents($section_path, "---\ntype: " . $properties['posttype'] . "\n---\n");
+        }
     }
 
     # build the site.
