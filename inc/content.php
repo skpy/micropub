@@ -371,16 +371,24 @@ function create($request, $photos = []) {
         }
         if (!empty($syndicated_urls)) {
             # convert the array of syndicated URLs into scalar key/value pairs
-            foreach ($syndicated_urls as $k => $v) {
-                $properties[$k] = $v;
-            }
-            # let's just re-write this post, with the new properties
-            # in the front matter.
+            # if this is an article let's just re-write it,
+            # with the new properties in the front matter.
             # NOTE: we are NOT rebuilding the site at this time.
             #       I am unsure whether I even want to display these
             #       links.  But it's easy enough to collect them, for now.
-            $file_contents = build_post($properties, $content);
-            write_file($filename, $file_contents, true);
+            if ($properties['posttype'] == 'article') {
+                foreach ($syndicated_urls as $k => $v) {
+                    $properties[$k] = $v;
+                }
+                $file_contents = build_post($properties, $content);
+                write_file($filename, $file_contents, true);
+            } else {
+                # this is not an article, so we should be able to simply
+                # append the syndicated URL to the YAML data file
+                foreach ($syndicated_urls as $k => $v) {
+                  file_put_contents($yaml_path, "  $k: $v\n", FILE_APPEND);
+                }
+            }
         }
     }
     # send a 201 response, with the URL of this item.

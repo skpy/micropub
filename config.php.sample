@@ -34,6 +34,7 @@ $config = array(
         'note'        => date('Y/m'),
         'photo'       => date('Y/m'),
         'repost-of'   => date('Y/m'),
+        'rsvp'        => 'rsvp',
     ),
 
     # whether or not to copy uploaded files to the source /static/ directory.
