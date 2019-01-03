@@ -28,9 +28,9 @@ $config = array(
     # Notes, reposts, replies, etc are being stored as Hugo data files
     # in the /data directory. No need to prepend "/data" to these paths.
     'content_paths' => array(
-        'bookmark-of' => 'links',
-        'favorite' => 'favorites',
+        'bookmark-of' => 'bookmarks',
         'in-reply-to' => date('Y/m'),
+        'like-of'     => 'likes',
         'note'        => date('Y/m'),
         'photo'       => date('Y/m'),
         'repost-of'   => date('Y/m'),
