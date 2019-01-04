@@ -69,6 +69,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             if ( copy ( $upload_path . $upload, $copy_path . $upload ) === FALSE ) {
                 quit(400, 'copy_error', 'Unable to copy upload to source directory');
             }
+            # be sure to copy the thumbnail file, too
+            $thumb = str_replace('-' . $config['max_image_width'] . '.', '-200.', $upload);
+            if ( copy ( $upload_path . $thumb, $copy_path . $thumb ) === FALSE ) {
+                quit(400, 'copy_error', 'Unable to copy thumbnail to source directory');
+            }
         }
         $url = $config['base_url'] . $config['upload_path'] . $subdir . $upload;
         quit(201, '', '', $url);
