@@ -25,7 +25,7 @@ function resize_image($file, $width) {
         quit(400, 'error', 'unable to write image');
     }
     imagedestroy($target);
-    chmod($file, 0744);
+    chmod($file, 0644);
 }
 
 function media_upload($file, $target_dir, $max_width) {
