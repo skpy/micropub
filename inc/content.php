@@ -249,6 +249,11 @@ function create($request, $photos = []) {
             $properties['photo'] = array_merge($properties['photo'], $photos);
         }
     }
+    if (!empty($properties['photo'])) {
+        $properties['thumbnail'] = array_map(function($item) {
+            return str_replace('-' . $config['max_image_width] . '.', '-200.', $item);
+        }, $properties['photo']);
+    }
 
     # figure out what kind of post this is.
     $properties['posttype'] = post_type_discovery($properties);

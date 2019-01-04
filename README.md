@@ -54,4 +54,4 @@ I am making heavy use of [Hugo data files](https://gohugo.io/templates/data-temp
 
 At this time, editing and deleting any content stored in a data file is **not supported**. Editing and deleting is only supported for articles.
 
-The media endpoint automatically generates thumbnails with a maximum width of 200 pixels. There is no reference to this thumbnail anywhere in the resultant content stored: it is up to the theme to access these thumbnails as needed.
+The media endpoint automatically generates thumbnails with a maximum width of 200 pixels. The array of links to these is stored in the `$properties['thumbnail']` property.
