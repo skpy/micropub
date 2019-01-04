@@ -8,7 +8,7 @@ This is based heavily off of the following projects:
 * [dgold's Nanopub](https://github.com/dg01d/nanopub/)
 * [aaronpk's MVP Media Endpoint](https://gist.github.com/aaronpk/4bee1753688ca9f3036d6f31377edf14)
 
-This works **for me**, following the principles of [self dog fooding](https://indieweb.org/selfdogfood).  Rather then develop a universal widget that might work for all possible implementation, I built what I needed.  Hopefully this serves as an inspiration for others, in the same way that those projects linked above heavily inspired me.
+This works **for me**, following the principles of [self dog fooding](https://indieweb.org/selfdogfood).  Rather then develop a universal widget that might work for all possible implementations, I built what I needed.  Hopefully this serves as an inspiration for others, in the same way that those projects linked above heavily inspired me.
 
 ## Installation
 If you're using Hugo, you can simply clone this repo into the `/public` directory of your active website.  Files that exist in `/public` but which do not exist in your `/content` or `/static` directories will not be overwritten.
@@ -49,3 +49,9 @@ See `inc/twitter.php` for the implementation details.
 I have my Hugo site in `/var/www/skippy.net`.  I have my [web server](https://caddyserver.com/) configured to use `/var/www/skippy.net/public` as the document root of my site.  All of `/var/www/skippy.net/content` and `/var/www/skippy.net/static` are owned by the `www-data` user, to ensure that content can be created, edited, and deleted through Micropub without permission problems.
 
 When I create a new post, Micropub will generate the file in `/var/www/skippy.net/content/`, and then invoke Hugo, which will recreate all the content in `/var/www/skippy.net/public`.  No extra steps are required, and the new content is available.
+
+I am making heavy use of [Hugo data files](https://gohugo.io/templates/data-templates/) with this Micropub server. Notes, photos, replies, reposts, bookmarks, and likes are all stored as YAML arrays in files in the `/data` directory. This allows new content to be appended quickly, and reduces the number of content files that Hugo needs to parse when building the site.
+
+At this time, editing and deleting any content stored in a data file is **not supported**. Editing and deleting is only supported for articles.
+
+The media endpoint automatically generates thumbnails with a maximum width of 200 pixels. There is no reference to this thumbnail anywhere in the resultant content stored: it is up to the theme to access these thumbnails as needed.

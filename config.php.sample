@@ -37,6 +37,15 @@ $config = array(
         'rsvp'        => 'rsvp',
     ),
 
+    # I am storing all photos, reposts and replies as notes. So I need a
+    # way to tell Hugo to use the "note" templates for these items. This
+    # override controls that.
+    'content_overrides' => array(
+        'in-reply-to' => 'note',
+        'photo'       => 'note',
+        'repost-of'   => 'note',
+    ),
+
     # whether or not to copy uploaded files to the source /static/ directory.
     'copy_uploads_to_source' => true,
 
