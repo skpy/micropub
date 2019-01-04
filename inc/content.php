@@ -250,9 +250,7 @@ function create($request, $photos = []) {
         }
     }
     if (!empty($properties['photo'])) {
-        $properties['thumbnail'] = array_map(function($item) {
-            return str_replace('-' . $config['max_image_width'] . '.', '-200.', $item);
-        }, $properties['photo']);
+        $properties['thumbnail'] = preg_replace('#-' . $config['max_image_width'] . '\.#', '-200.', $properties['photo']);
     }
 
     # figure out what kind of post this is.
