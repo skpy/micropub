@@ -71,10 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             }
         }
         $url = $config['base_url'] . $config['upload_path'] . $subdir . $upload;
-        header('HTTP/1.1 201 Created');
-        header('Location: ' . $url);
-        echo json_encode([ 'url' => $url ]);
-        die();
+        quit(201, '', '', $url);
     }
     # one or more photos may be uploaded along with the content.
     if (!empty($_FILES['photo'])) {
@@ -87,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $upload = media_upload($photo, $copy_path, $config['max_image_width']);
             $photo_urls[] = $config['base_url'] . $config['upload_path'] . $subdir . $upload;
         }
-    } 
+    }
     # Parse the JSON or POST body into an object
     $request = parse_request();
     switch($request->action):

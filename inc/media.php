@@ -53,7 +53,7 @@ function media_upload($file, $target_dir, $max_width) {
     # define our own name for this file.
     $orig = explode('.', $file['name'])[0];
     $date = new DateTime();
-    $filename = $orig . '-' . $date->format('u') . ".$ext";
+    $filename = $orig . '-' . $date->format('u') . "-$max_width.$ext";
     # extra caution to ensure the file doesn't already exist
     if ( file_exists("$target_dir$filename")) {
         quit(409, 'file_exists', 'A filename conflict has occurred on the server.');
@@ -72,6 +72,11 @@ function media_upload($file, $target_dir, $max_width) {
     if ( $details[0] > $max_width ) {
         resize_image("$target_dir$filename", $max_width );
     }
+
+    # let's make a thumbnail, too.
+    $thumbnail = str_replace("-$max_width.$ext", "-200.$ext", $filename);
+    copy("$target_dir$filename", "$target_dir$thumbnail");
+    resize_image("$target_dir$thumbnail", 200 );
 
     return $filename;
 }
