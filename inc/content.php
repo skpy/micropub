@@ -324,8 +324,15 @@ function create($request, $photos = []) {
         file_put_contents($yaml_path, $file_contents, FILE_APPEND);
         # now we need to create a Markdown file, so that Hugo will
         # build the file for public consumption.
+        # NOTE: we may want to override the post type here, so that we
+        #       can use a singular Hugo theme for multiple post types.
+        if (array_key_exists($properties['posttype'], $config['content_overrides'])) {
+            $content_type = $config['content_overrides'][$properties['posttype']];
+        } else {
+            $content_type = $properties['posttype'];
+        }
         if (! file_exists($md_path)) {
-            file_put_contents($md_path, "---\ntype: " . $properties['posttype'] . "\n---\n");
+            file_put_contents($md_path, "---\ntype: $content_type\n---\n");
         }
         # we may need to create a _index.md file so that a section template
         # can be generated. If the content_path has any slashes in it, that
@@ -333,7 +340,7 @@ function create($request, $photos = []) {
         # is required.
         if (FALSE !== strpos($content_path, '/')) {
             $section_path = dirname($config['source_path'] . 'content/' . $content_path) . '/_index.md';
-            file_put_contents($section_path, "---\ntype: " . $properties['posttype'] . "\n---\n");
+            file_put_contents($section_path, "---\ntype: $content_type\n---\n");
         }
     }
 
