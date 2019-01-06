@@ -139,34 +139,34 @@ function get_tweet($config, $url) {
 # as well as link to user names and display media.
 # it will recursively display one quoted tweet in the same way.
 function parse_tweet ($tweet, $recurse = 0) {
-  $text = $tweet->full_text;
+    $text = $tweet->full_text;
 
-  if (! empty($tweet->entities->urls)) {
-    foreach ($tweet->entities->urls as $url) {
-      $text = preg_replace('#' . preg_quote($url->url) . '#', $url->expanded_url, $text);
-    }
-  }
-
-  if (! empty($tweet->entities->user_mentions)) {
-    foreach ($tweet->entities->user_mentions as $user) {
-      $text = preg_replace('#@' . preg_quote($user->screen_name) . '#', '<a href="https://twitter.com/' . $user->screen_name . '">@' . $user->screen_name . '</a>', $text);
-    }
-  }
-
-  if (! empty($tweet->entities->media)) {
-    foreach ($tweet->entities->media as $media) {
-      if ($media->type == 'photo') {
-        $text = preg_replace('#' . preg_quote($media->url) . '#', '<img src="' . $media->media_url_https . '" />', $text);
+    if (! empty($tweet->entities->urls)) {
+      foreach ($tweet->entities->urls as $url) {
+        $text = preg_replace('#' . preg_quote($url->url) . '#', $url->expanded_url, $text);
       }
     }
-  }
 
-  if ($tweet->is_quote_status == 1 && $recurse == 0) {
-    $quote = parse_tweet($tweet->quoted_status, 1);
-    $quote = '<blockquote><p>' . parse_tweet($tweet->quoted_status, $recurse) . '</p><cite><a href="https://twitter.com/' . $tweet->quoted_status->user->screen_name . '/status/' . $tweet->quoted_status->id_str . '">' . $tweet->quoted_status->user->name . '</a></cite></blockquote>';
-    $quote_url = 'https://twitter.com/' . $tweet->quoted_status->user->screen_name . '/status/' . $tweet->quoted_status->id_str;
-    $text = str_replace($quote_url, '', $text);;
-    $text = $quote . $text;
-  }
-  return $text;
+    if (! empty($tweet->entities->user_mentions)) {
+      foreach ($tweet->entities->user_mentions as $user) {
+        $text = preg_replace('#@' . preg_quote($user->screen_name) . '#', '<a href="https://twitter.com/' . $user->screen_name . '">@' . $user->screen_name . '</a>', $text);
+      }
+    }
+
+    if (! empty($tweet->entities->media)) {
+      foreach ($tweet->entities->media as $media) {
+        if ($media->type == 'photo') {
+          $text = preg_replace('#' . preg_quote($media->url) . '#', '<img src="' . $media->media_url_https . '" />', $text);
+        }
+      }
+    }
+
+    if ($tweet->is_quote_status == 1 && $recurse == 0) {
+      $quote = parse_tweet($tweet->quoted_status, 1);
+      $quote = '<blockquote><p>' . parse_tweet($tweet->quoted_status, $recurse) . '</p><cite><a href="https://twitter.com/' . $tweet->quoted_status->user->screen_name . '/status/' . $tweet->quoted_status->id_str . '">' . $tweet->quoted_status->user->name . '</a></cite></blockquote>';
+      $quote_url = 'https://twitter.com/' . $tweet->quoted_status->user->screen_name . '/status/' . $tweet->quoted_status->id_str;
+      $text = str_replace($quote_url, '', $text);;
+      $text = $quote . $text;
+    }
+    return $text;
 }
