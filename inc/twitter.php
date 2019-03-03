@@ -29,10 +29,19 @@ function bookmark_of_twitter_com($properties, $content) {
 function in_reply_to_m_twitter_com($properties, $content) {
     return twitter_source('in-reply-to', $properties, $content);
 }
+function in_reply_to_mobile_twitter_com($properties, $content) {
+    return twitter_source('in-reply-to', $properties, $content);
+}
 function repost_of_m_twitter_com($properties, $content) {
     return twitter_source('repost-of', $properties, $content);
 }
+function repost_of_mobile_twitter_com($properties, $content) {
+    return twitter_source('repost-of', $properties, $content);
+}
 function bookmark_of_m_twitter_com($properties, $content) {
+    return twitter_source('bookmark-of', $properties, $content);
+}
+function bookmark_of_mobile_twitter_com($properties, $content) {
     return twitter_source('bookmark-of', $properties, $content);
 }
 
