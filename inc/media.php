@@ -51,7 +51,8 @@ function media_upload($file, $target_dir, $max_width) {
         $ext = 'jpeg';
     }
     # define our own name for this file.
-    $orig = explode('.', $file['name'])[0];
+    # and replace spaces with dashes, for sanity and safety
+    $orig = str_replace(' ', '-', explode('.', $file['name'])[0]);
     $date = new DateTime();
     $filename = $orig . '-' . $date->format('u') . "-$max_width.$ext";
     # extra caution to ensure the file doesn't already exist
