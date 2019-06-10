@@ -17,13 +17,13 @@ function http_status ($code) {
 
 function quit ($code = 400, $error = '', $description = 'An error occurred.', $location = '') {
     $code = (int) $code;
-    $status = 'success';
     header("HTTP/1.1 " . http_status($code));
     if ( $code >= 400 ) {
         echo json_encode(['error' => $error, 'error_description' => $description]);
     } elseif ($code == 200 || $code == 201 || $code == 202) {
         if (!empty($location)) {
             header('Location: ' . $location);
+            echo $location;
         }
     }
     die();
