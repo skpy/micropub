@@ -2,8 +2,30 @@
 
 function resize_image($file, $width) {
     # https://stackoverflow.com/a/25181208/3297734
+    $rotate = 0;
     $ext = pathinfo(basename($file), PATHINFO_EXTENSION);
+    # if this is a JPEG, read the Exif data in order to
+    # rotate the image, if needed
+    if ($ext == 'jpeg') {
+        $exif = @exif_read_data($file);
+        if (!empty($exif['Orientation'])) {
+            switch ($exif['Orientation']) {
+                case 3:
+                    $rotate = 180;
+                    break;
+                case 6:
+                     $rotate = -90;
+                     break;
+                case 8:
+                     $rotate = 90;
+                     break;
+            }
+        }
+    }
     $new = @imagecreatefromstring(@file_get_contents($file));
+    if ($rotate !== 0) {
+        $new = imagerotate($new, $rotate, 0);
+    }
     // resize to our max width
     $new = imagescale( $new, $width );
     if ( $new === false ) {
